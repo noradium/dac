@@ -1,0 +1,28 @@
+{
+  "name": "danime-another-comment",
+  "version": "1.0.0",
+  "description": "dアニメストアニコニコ支店の動画にコメントが増えたように見えるchrome拡張",
+  "scripts": {
+    "build": "gulp build",
+    "build-for-webstore": "gulp buildForChromeWebStore",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "noradium",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-transform-class-properties": "^6.19.0",
+    "babel-preset-env": "^1.6.0",
+    "babel-register": "^6.22.0",
+    "fs": "0.0.1-security",
+    "gulp": "github:gulpjs/gulp#4.0",
+    "gulp-rework": "^1.2.0",
+    "gulp-shell": "^0.6.3",
+    "path": "^0.12.7",
+    "query-string": "^5.0.0",
+    "rework-npm": "^1.0.0",
+    "webpack": "^2.7.0",
+    "webpack-stream": "^4.0.0"
+  }
+}

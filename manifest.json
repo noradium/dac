@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "danime-another-comment",
+  "version": "1.0.0",
+  "content_scripts": [
+    {
+      "matches": [
+        "http://www.nicovideo.jp/watch/*"
+      ],
+      "js": [
+        "scripts/index.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": ["scripts/hack_fetch_thread.js"],
+  "background": {
+    "scripts": ["scripts/background.js"]
+  },
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "http://nicovideo.cdn.nimg.jp/web/scripts/pages/watch/watch_app.js",
+    "http://api.search.nicovideo.jp/api/v2/video/contents/search"
+  ]
+}
