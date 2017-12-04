@@ -24,6 +24,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
 
     console.log(args);
     // dアニ動画のthreadId
+    // args には２個入ってくる。１個はdアニの動画が表示された時に見えるコメントのスレッド。isPrivate が true。
     const defaultThreadId = (() => {
       for (let i = 0; i < args.length; ++i) {
         if (args[i].thread.isPrivate) {
@@ -31,6 +32,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         }
       }
     })();
+    // もう１個はコメント一覧で切り替え可能な「通常コメント」だと思う。チャンネル限定動画では使われないと思うので、ここに別動画のコメントを突っ込むことにする。
     const regularThreadId = (() => {
       for (let i = 0; i < args.length; ++i) {
         if (!args[i].thread.isPrivate) {
@@ -151,7 +153,12 @@ function buildSearchWord(title) {
       .replace('　', ' ') // 全角スペースは半角に直しておく
       .replace(/第(\d+)/g, '$1') // 第◯話 の第はない場合もあるので消しておく(けもフレ対応)
       .replace(/[「」『』]/g, '') // 括弧も表記揺れがあるので消しておく(バカテス対応)
-      .replace( /^0+([0-9]+)/, "$1" ) // ゼロサプレス(とある魔術の禁書目録対応)
+      .replace(/0+([0-9]+)/, "$1" ) // ゼロサプレス(とある魔術の禁書目録対応)
+      // TODO: ゼロサプレスするとファンタシースターオンラインが死ぬので何か考えないとだめそう... (複数回検索するなど)
+      .replace(/[#.\-"'<>]/g, ' ') // 記号系はスペースに変換しちゃっていいんじゃないかなあ。ダメなケースもあるかも(君に届け対応)
+      .replace(/【.*】/, '') // 日テレオンデマンド対応
+      // 特殊系
+      .replace('STEINS;GATE', 'シュタインズ ゲート ') // (シュタゲ対応)
   );
 }
 
