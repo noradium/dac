@@ -1,6 +1,6 @@
 {
   "name": "danime-another-comment",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "dアニメストアニコニコ支店の動画にコメントが増えたように見えるchrome拡張",
   "scripts": {
     "build": "gulp build",
