@@ -59,7 +59,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     console.info(`dアニメストア ニコニコ支店の動画なので処理を開始します(${defaultThreadId}:${title})`);
     alreadyFetchedOriginalThreadId = defaultThreadId;
 
-    return window.fetch(`http://api.search.nicovideo.jp/api/v2/video/contents/search?q=${encodeURIComponent(title.replace('　', ' '))}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId&_context=danime-another-comment`, {
+    return window.fetch(`http://api.search.nicovideo.jp/api/v2/video/contents/search?q=${buildSearchWord(title)}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId&_context=danime-another-comment`, {
       mode: 'cors'
     })
       .catch((error) => {
@@ -144,6 +144,16 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
       });
   };
 };
+
+function buildSearchWord(title) {
+  return encodeURIComponent(
+    title
+      .replace('　', ' ') // 全角スペースは半角に直しておく
+      .replace(/第(\d+)/g, '$1') // 第◯話 の第はない場合もあるので消しておく(けもフレ対応)
+      .replace(/[「」『』]/g, '') // 括弧も表記揺れがあるので消しておく(バカテス対応)
+      .replace( /^0+([0-9]+)/, "$1" ) // ゼロサプレス(とある魔術の禁書目録対応)
+  );
+}
 
 const DANIME_ANOTHER_COMMENT_IGNORE_THREAD_IDS_KEY = 'danime-another-comment-ignore-thread-ids';
 function showIgnoreDialog(originalThreadId, anotherThreadId, title) {
