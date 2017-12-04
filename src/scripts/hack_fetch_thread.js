@@ -23,6 +23,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     const title = document.querySelector('.VideoTitle').innerText;
 
     console.log(args);
+    // dアニ動画のthreadId
     const defaultThreadId = (() => {
       for (let i = 0; i < args.length; ++i) {
         if (args[i].thread.isPrivate) {
@@ -30,6 +31,14 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         }
       }
     })();
+    const regularThreadId = (() => {
+      for (let i = 0; i < args.length; ++i) {
+        if (!args[i].thread.isPrivate) {
+          return args[i].thread.id;
+        }
+      }
+    })();
+    // dアニじゃない動画のthreadId
     let anotherThreadId = null;
     let anotherTitle = null;
 
@@ -92,6 +101,9 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         return originalFetchThread.call(this, ...args);
       })
       .then((threads) => {
+        const regularThreadIndex = threads.findIndex((thread) => {
+          return thread.id === regularThreadId && !thread.isPrivate;
+        });
         const defaultThreadIndex = threads.findIndex((thread) => {
           return thread.id === defaultThreadId && thread.isPrivate;
         });
@@ -102,13 +114,13 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         // anotherThread で取得した内容を元の動画のほうの thread に詰め直す。ちょっと壊れそうだけど動いた
         let newIndex = 0;
         threads[anotherThreadIndex]._chatMap.forEach((value, key) => {
-          while (threads[defaultThreadIndex]._chatMap.has(newIndex)) {
+          while (threads[regularThreadIndex]._chatMap.has(newIndex)) {
             ++newIndex;
           }
-          // thread を偽装しないとコメントパネルの方に表示されなかった
-          value.thread = defaultThreadId;
+          // thread を偽装しないとコメント一覧の方に表示されなかった
+          value.thread = regularThreadId;
 
-          threads[defaultThreadIndex]._chatMap.set(newIndex, value);
+          threads[regularThreadIndex]._chatMap.set(newIndex, value);
           ++newIndex;
         });
         showIgnoreDialog(defaultThreadId, anotherThreadId, anotherTitle);
