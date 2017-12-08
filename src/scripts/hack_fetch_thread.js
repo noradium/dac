@@ -21,6 +21,9 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     const channelLink = document.querySelector('.ChannelInfo-pageLink');
     const channelId = channelLink ? channelLink.getAttribute('href').match(/^http:\/\/ch\.nicovideo\.jp\/(ch[0-9]+)/)[1] : null;
     const title = document.querySelector('.VideoTitle').innerText;
+    const videoDuration = document.querySelector('.PlayerPlayTime-duration').innerText.split(':').reduce((prev, current, index, source) => {
+      return prev + current * Math.pow(60, source.length - 1 - index);
+    }, 0);
 
     console.log(args);
     // dアニ動画のthreadId
@@ -61,7 +64,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     console.info(`dアニメストア ニコニコ支店の動画なので処理を開始します(${defaultThreadId}:${title})`);
     alreadyFetchedOriginalThreadId = defaultThreadId;
 
-    return window.fetch(`http://api.search.nicovideo.jp/api/v2/video/contents/search?q=${buildSearchWord(title)}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId&_context=danime-another-comment`, {
+    return window.fetch(`http://api.search.nicovideo.jp/api/v2/video/contents/search?q=${buildSearchWord(title)}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId,lengthSeconds&_context=danime-another-comment`, {
       mode: 'cors'
     })
       .catch((error) => {
@@ -74,8 +77,16 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         if (!json.data) {
           return Promise.reject('search_error');
         }
+
+        // 動画の長さとして元動画の前後 20% を許容（25分の動画の場合20分から30分までOK）
+        const allowedMinLength = videoDuration * 0.8;
+        const allowedMaxLength = videoDuration * 1.2;
         const maybeAnotherVideo = json.data.find((video) => {
-          return `${video.threadId}` !== defaultThreadId && !!video.channelId;
+          return (
+            `${video.threadId}` !== defaultThreadId &&
+              !!video.channelId &&
+              (allowedMinLength <= video.lengthSeconds && video.lengthSeconds <= allowedMaxLength)
+          );
         });
         if (!maybeAnotherVideo) {
           return Promise.reject('notfound');
