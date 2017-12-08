@@ -21,7 +21,9 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     const channelLink = document.querySelector('.ChannelInfo-pageLink');
     const channelId = channelLink ? channelLink.getAttribute('href').match(/^http:\/\/ch\.nicovideo\.jp\/(ch[0-9]+)/)[1] : null;
     const title = document.querySelector('.VideoTitle').innerText;
-    const videoDuration = JSON.parse(document.querySelector("#js-initial-watch-data").getAttribute("data-api-data")).video.duration;
+    const videoDuration = document.querySelector('.PlayerPlayTime-duration').innerText.split(':').reduce((prev, current, index, source) => {
+      return prev + current * Math.pow(60, source.length - 1 - index);
+    }, 0);
 
     console.log(args);
     // dアニ動画のthreadId
