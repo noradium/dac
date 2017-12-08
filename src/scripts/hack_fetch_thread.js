@@ -18,6 +18,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
   e.default.prototype.fetchThread = function () {
     const args = arguments;
 
+    // この辺りのデータは`#js-initial-watch-data`から取れると良かったのですが、これだと説明文などから動画を移動したときに正しい値にならない。
     const channelLink = document.querySelector('.ChannelInfo-pageLink');
     const channelId = channelLink ? channelLink.getAttribute('href').match(/^http:\/\/ch\.nicovideo\.jp\/(ch[0-9]+)/)[1] : null;
     const title = document.querySelector('.VideoTitle').innerText;
@@ -35,7 +36,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         }
       }
     })();
-    // もう１個はコメント一覧で切り替え可能な「通常コメント」だと思う。チャンネル限定動画では使われないと思うので、ここに別動画のコメントを突っ込むことにする。
+    // もう１個はコメント一覧で切り替え可能な「通常コメント」。チャンネル限定動画では使われないと思うので、ここに別動画のコメントを突っ込むことにする。
     const regularThreadId = (() => {
       for (let i = 0; i < args.length; ++i) {
         if (!args[i].thread.isPrivate) {
@@ -124,7 +125,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
           return thread.id === anotherThreadId && thread.isPrivate;
         });
 
-        // anotherThread で取得した内容を元の動画のほうの thread に詰め直す。ちょっと壊れそうだけど動いた
+        // anotherThread で取得した内容を元の動画の通常コメントを表す thread に詰め直す。ちょっと壊れそうだけど動いた
         let newIndex = 0;
         threads[anotherThreadIndex]._chatMap.forEach((value, key) => {
           while (threads[regularThreadIndex]._chatMap.has(newIndex)) {
