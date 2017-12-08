@@ -159,6 +159,7 @@ function buildSearchWord(title) {
       .replace(/【.*】/, ' ') // 日テレオンデマンド対応
       // 特殊系
       .replace('STEINS;GATE', 'シュタインズ ゲート ') // (シュタゲ対応)
+      .replace(/ (\d+)駅/g, ' $1')  // (輪るピングドラム対応 (第N駅 <-> Nth station ・第は除去済み))
   );
 }
 
