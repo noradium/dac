@@ -1,3 +1,10 @@
+import VideoInfo from './modules/video_info';
+import FetchThreadArguments from "./modules/fetch_thread_arguments";
+import SearchAPI from "./modules/search_api";
+import buildSearchWord from "./modules/build_search_word";
+import IgnorePairsStorage from "./modules/storage/ignore_pairs_storage";
+import IgnoreDialog from "./modules/ignore_dialog";
+
 window.original_watch_dll = window.watch_dll;
 
 // TODO: プロパティ名 m 固定値じゃ多分まずいよなあ
@@ -16,75 +23,42 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
   originalCommentClientFunction(t, e, n);
   const originalFetchThread = e.default.prototype.fetchThread;
   e.default.prototype.fetchThread = function () {
-    const args = arguments;
+    const fetchThreadArguments = new FetchThreadArguments(arguments);
+    const videoInfo = new VideoInfo();
 
-    // この辺りのデータは`#js-initial-watch-data`から取れると良かったのですが、これだと説明文などから動画を移動したときに正しい値にならない。
-    const channelLink = document.querySelector('.ChannelInfo-pageLink');
-    const channelId = channelLink ? channelLink.getAttribute('href').match(/^http:\/\/ch\.nicovideo\.jp\/(ch[0-9]+)/)[1] : null;
-    const title = document.querySelector('.VideoTitle').innerText;
-    const videoDuration = document.querySelector('.PlayerPlayTime-duration').innerText.split(':').reduce((prev, current, index, source) => {
-      return prev + current * Math.pow(60, source.length - 1 - index);
-    }, 0);
-
-    console.log(args);
-    // dアニ動画のthreadId
-    // args には２個入ってくる。１個はdアニの動画が表示された時に見えるコメントのスレッド。isPrivate が true。
-    const defaultThreadId = (() => {
-      for (let i = 0; i < args.length; ++i) {
-        if (args[i].thread.isPrivate) {
-          return args[i].thread.id;
-        }
-      }
-    })();
-    // もう１個はコメント一覧で切り替え可能な「通常コメント」。チャンネル限定動画では使われないと思うので、ここに別動画のコメントを突っ込むことにする。
-    const regularThreadId = (() => {
-      for (let i = 0; i < args.length; ++i) {
-        if (!args[i].thread.isPrivate) {
-          return args[i].thread.id;
-        }
-      }
-    })();
-    // dアニじゃない動画のthreadId
+    // dアニじゃないタイトルが似た動画のthreadId
     let anotherThreadId = null;
     let anotherTitle = null;
 
     if (document.querySelector('.EditorMenuContainer')) {
       console.info('投稿者編集が利用できる環境のため処理しません');
-      return originalFetchThread.call(this, ...args);
+      return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
     // dアニメストア ニコニコ支店 以外は処理しません
-    if (!channelId || channelId !== 'ch2632720') {
+    if (!videoInfo.isChannel || videoInfo.channelId !== 'ch2632720') {
       console.info('対象外の動画なので処理しません');
-      return originalFetchThread.call(this, ...args);
+      return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
-    if (alreadyFetchedOriginalThreadId === defaultThreadId) {
+    if (alreadyFetchedOriginalThreadId === fetchThreadArguments.defaultThreadId) {
       console.info('この動画ではすでに取得済みなので取得しません');
-      return originalFetchThread.call(this, ...args);
+      return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
 
-    console.info(`dアニメストア ニコニコ支店の動画なので処理を開始します(${defaultThreadId}:${title})`);
-    alreadyFetchedOriginalThreadId = defaultThreadId;
+    console.info(`dアニメストア ニコニコ支店の動画なので処理を開始します(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
+    alreadyFetchedOriginalThreadId = fetchThreadArguments.defaultThreadId;
 
-    return window.fetch(`http://api.search.nicovideo.jp/api/v2/video/contents/search?q=${buildSearchWord(title)}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId,lengthSeconds&_context=danime-another-comment`, {
-      mode: 'cors'
-    })
-      .catch((error) => {
-        return Promise.reject('search_error');
-      })
-      .then((response) => {
-        return response.json();
-      })
+    return SearchAPI.fetch(buildSearchWord(videoInfo.title))
       .then((json) => {
         if (!json.data) {
           return Promise.reject('search_error');
         }
 
         // 動画の長さとして元動画の前後 20% を許容（25分の動画の場合20分から30分までOK）
-        const allowedMinLength = videoDuration * 0.8;
-        const allowedMaxLength = videoDuration * 1.2;
+        const allowedMinLength = videoInfo.duration * 0.8;
+        const allowedMaxLength = videoInfo.duration * 1.2;
         const maybeAnotherVideo = json.data.find((video) => {
           return (
-            `${video.threadId}` !== defaultThreadId &&
+            `${video.threadId}` !== fetchThreadArguments.defaultThreadId &&
               !!video.channelId &&
               (allowedMinLength <= video.lengthSeconds && video.lengthSeconds <= allowedMaxLength)
           );
@@ -92,7 +66,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         if (!maybeAnotherVideo) {
           return Promise.reject('notfound');
         }
-        if (isIncludedIgnoreList(defaultThreadId, maybeAnotherVideo.threadId)) {
+        if (IgnorePairsStorage.includes(fetchThreadArguments.defaultThreadId, maybeAnotherVideo.threadId)) {
           return Promise.reject('included_in_ignore_list');
         }
 
@@ -101,25 +75,17 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
         anotherTitle = maybeAnotherVideo.title;
       })
       .then(() => {
-        args[args.length] = {
-          thread: this.createThread({
-            id: anotherThreadId,
-            isPrivate: true, // isPrivate を true にしないと取得できない。
-            // noLeaf: false, // ?
-            leafExpression: args[0].thread.leafExpression, // わからんので他のと同じのを渡しておく
-            language: 0
-          }),
-          scores: 1
-        };
-        args.length += 1;
-        return originalFetchThread.call(this, ...args);
+        fetchThreadArguments.append(this.createThread({
+          id: anotherThreadId,
+          isPrivate: true, // isPrivate を true にしないと取得できない。
+          leafExpression: fetchThreadArguments.get(0).thread.leafExpression, // わからんので他のと同じのを渡しておく
+          language: 0
+        }));
+        return originalFetchThread.call(this, ...fetchThreadArguments.raw);
       })
       .then((threads) => {
         const regularThreadIndex = threads.findIndex((thread) => {
-          return thread.id === regularThreadId && !thread.isPrivate;
-        });
-        const defaultThreadIndex = threads.findIndex((thread) => {
-          return thread.id === defaultThreadId && thread.isPrivate;
+          return thread.id === fetchThreadArguments.regularThreadId && !thread.isPrivate;
         });
         const anotherThreadIndex = threads.findIndex((thread) => {
           return thread.id === anotherThreadId && thread.isPrivate;
@@ -132,25 +98,25 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
             ++newIndex;
           }
           // thread を偽装しないとコメント一覧の方に表示されなかった
-          value.thread = regularThreadId;
+          value.thread = fetchThreadArguments.regularThreadId;
 
           threads[regularThreadIndex]._chatMap.set(newIndex, value);
           ++newIndex;
         });
-        showIgnoreDialog(defaultThreadId, anotherThreadId, anotherTitle);
+        showIgnoreDialog(fetchThreadArguments.defaultThreadId, anotherThreadId, anotherTitle);
 
         return threads;
       }).catch(error => {
         switch (error) {
           case 'notfound':
-            console.error(`別の動画が見つかりませんでした。(${defaultThreadId}:${title})`);
-            return originalFetchThread.call(this, ...args);
+            console.error(`別の動画が見つかりませんでした。(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
+            return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           case 'search_error':
-            console.error(`検索に失敗しました。(${defaultThreadId}:${title})`);
-            return originalFetchThread.call(this, ...args);
+            console.error(`検索に失敗しました。(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
+            return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           case 'included_in_ignore_list':
-            console.error(`非表示リストに含まれているため何もしませんでした。(${defaultThreadId}:${title})`);
-            return originalFetchThread.call(this, ...args);
+            console.error(`非表示リストに含まれているため何もしませんでした。(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
+            return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           default:
             console.error(error);
             return Promise.reject(error);
@@ -159,57 +125,18 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
   };
 };
 
-function buildSearchWord(title) {
-  return encodeURIComponent(
-    title
-      .replace('　', ' ') // 全角スペースは半角に直しておく
-      .replace(/第(\d+)/g, '$1') // 第◯話 の第はない場合もあるので消しておく(けもフレ対応)
-      .replace(/[「」『』]/g, ' ') // 括弧も表記揺れがあるので消しておく(バカテス対応)
-      .replace(/0+([0-9]+)/, "$1" ) // ゼロサプレス(とある魔術の禁書目録対応)
-      // TODO: ゼロサプレスするとファンタシースターオンラインが死ぬので何か考えないとだめそう... (複数回検索するなど)
-      .replace(/[#.\-"'<>]/g, ' ') // 記号系はスペースに変換しちゃっていいんじゃないかなあ。ダメなケースもあるかも(君に届け対応)
-      .replace(/【.*】/, ' ') // 日テレオンデマンド対応
-      // 特殊系
-      .replace('STEINS;GATE', 'シュタインズ ゲート ') // (シュタゲ対応)
-      .replace(/ (\d+)駅/g, ' $1')  // (輪るピングドラム対応 (第N駅 <-> Nth station ・第は除去済み))
-  );
-}
+const ignoreDialog = new IgnoreDialog(document.body);
 
-const DANIME_ANOTHER_COMMENT_IGNORE_THREAD_IDS_KEY = 'danime-another-comment-ignore-thread-ids';
-function showIgnoreDialog(originalThreadId, anotherThreadId, title) {
-  const dialog = document.createElement('div');
-  dialog.innerHTML = `「<span style="font-weight: bold;">${title}</span>」のコメントも表示しています<br/>>今後別動画のコメントを表示しない`;
-  dialog.addEventListener('click', () => {
-    const threadIdPairs = window.localStorage.getItem(DANIME_ANOTHER_COMMENT_IGNORE_THREAD_IDS_KEY);
-    const threadIdPairsArray = threadIdPairs ? threadIdPairs.split(',') : [];
-    const pair = `${originalThreadId}:${anotherThreadId}`;
-    if (!threadIdPairsArray.includes(pair)) {
-      threadIdPairsArray.push(pair);
-      window.localStorage.setItem(DANIME_ANOTHER_COMMENT_IGNORE_THREAD_IDS_KEY, threadIdPairsArray.join(','));
+function showIgnoreDialog(threadId, anotherThreadId, title) {
+  ignoreDialog.show(
+    title,
+    () => {
+      if (!IgnorePairsStorage.includes(threadId, anotherThreadId)) {
+        IgnorePairsStorage.add(threadId, anotherThreadId);
+      }
+      location.reload();
     }
-    location.reload();
-  });
-  dialog.style.position = 'fixed';
-  dialog.style.width = '200px';
-  dialog.style.right = '20px';
-  dialog.style.bottom = '20px';
-  dialog.style.backgroundColor = '#ea5632';
-  dialog.style.color = '#fff';
-  dialog.style.padding = '12px';
-  dialog.style.borderRadius = '12px';
-  dialog.style.zIndex = 999999;
-  dialog.style.cursor = 'pointer';
-  document.body.appendChild(dialog);
-  setTimeout(() => {
-    document.body.removeChild(dialog);
-  }, 5000);
-}
-
-function isIncludedIgnoreList(originalThreadId, anotherThreadId) {
-  const threadIdPairs = window.localStorage.getItem(DANIME_ANOTHER_COMMENT_IGNORE_THREAD_IDS_KEY);
-  const threadIdPairsArray = threadIdPairs ? threadIdPairs.split(',') : [];
-  const pair = `${originalThreadId}:${anotherThreadId}`;
-  return threadIdPairsArray.includes(pair);
+  );
 }
 
 window.watch_dll = function (r) {
