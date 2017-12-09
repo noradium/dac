@@ -1,6 +1,7 @@
 export default class IgnoreDialog {
   _dialog;
   _currentOnClick;
+  _timeoutId;
 
   constructor(
     rootNode
@@ -26,8 +27,12 @@ export default class IgnoreDialog {
     this._currentOnClick = onClick;
     this._dialog.addEventListener('click', this._currentOnClick);
     this._dialog.style.display = 'block';
-    setTimeout(() => {
+    if (this._timeoutId) {
+      clearTimeout(this._timeoutId);
+    }
+    this._timeoutId = setTimeout(() => {
       this._dialog.style.display = 'none';
+      this._timeoutId = null;
     }, 5000);
   }
 }
