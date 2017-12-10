@@ -42,4 +42,14 @@ export default class VideoInfo {
   get duration() {
     return this._duration;
   }
+
+  toJSON() {
+    const json = {};
+    Object.getOwnPropertyNames(this).forEach((key) => {
+      if (key.indexOf('_') === 0) {
+        json[key.slice(1)] = this[key];
+      }
+    });
+    return json;
+  }
 }

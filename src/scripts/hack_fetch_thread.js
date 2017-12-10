@@ -2,8 +2,9 @@ import VideoInfo from './modules/video_info';
 import FetchThreadArguments from "./modules/fetch_thread_arguments";
 import SearchAPI from "./modules/search_api";
 import buildSearchWord from "./modules/build_search_word";
-import IgnorePairsStorage from "./modules/storage/ignore_pairs_storage";
-import IgnoreDialog from "./modules/ignore_dialog";
+import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
+import Dialog from "./modules/dialog";
+import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
 
 window.original_watch_dll = window.watch_dll;
 
@@ -24,6 +25,10 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
   const originalFetchThread = e.default.prototype.fetchThread;
   e.default.prototype.fetchThread = function () {
     const fetchThreadArguments = new FetchThreadArguments(arguments);
+
+    // 今見ている動画の so なしIDをdocument経由でとる良い方法がわからないのでsessionStorageにさすクソみたいな方法で用意する。
+    sessionStorage.danimeAnotherCommentCurrentDefaultThreadId = fetchThreadArguments.defaultThreadId;
+
     const videoInfo = new VideoInfo();
 
     // dアニじゃないタイトルが似た動画のthreadId
@@ -47,34 +52,11 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     console.info(`dアニメストア ニコニコ支店の動画なので処理を開始します(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
     alreadyFetchedOriginalThreadId = fetchThreadArguments.defaultThreadId;
 
-    return SearchAPI.fetch(buildSearchWord(videoInfo.title))
-      .then((json) => {
-        if (!json.data) {
-          return Promise.reject('search_error');
-        }
+    return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
+      .then((anotherVideo) => {
+        anotherThreadId = anotherVideo.anotherThreadId;
+        anotherTitle = anotherVideo.anotherTitle;
 
-        // 動画の長さとして元動画の前後 20% を許容（25分の動画の場合20分から30分までOK）
-        const allowedMinLength = videoInfo.duration * 0.8;
-        const allowedMaxLength = videoInfo.duration * 1.2;
-        const maybeAnotherVideo = json.data.find((video) => {
-          return (
-            `${video.threadId}` !== fetchThreadArguments.defaultThreadId &&
-              !!video.channelId &&
-              (allowedMinLength <= video.lengthSeconds && video.lengthSeconds <= allowedMaxLength)
-          );
-        });
-        if (!maybeAnotherVideo) {
-          return Promise.reject('notfound');
-        }
-        if (IgnorePairsStorage.includes(fetchThreadArguments.defaultThreadId, maybeAnotherVideo.threadId)) {
-          return Promise.reject('included_in_ignore_list');
-        }
-
-        console.info(`別の動画が見つかりました(${maybeAnotherVideo.threadId}:${maybeAnotherVideo.title})`);
-        anotherThreadId = maybeAnotherVideo.threadId;
-        anotherTitle = maybeAnotherVideo.title;
-      })
-      .then(() => {
         fetchThreadArguments.append(this.createThread({
           id: anotherThreadId,
           isPrivate: true, // isPrivate を true にしないと取得できない。
@@ -103,19 +85,21 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
           threads[regularThreadIndex]._chatMap.set(newIndex, value);
           ++newIndex;
         });
-        showIgnoreDialog(fetchThreadArguments.defaultThreadId, anotherThreadId, anotherTitle);
+        showIgnoreDialog(fetchThreadArguments.defaultThreadId, anotherTitle);
 
         return threads;
       }).catch(error => {
         switch (error) {
           case 'notfound':
             console.error(`別の動画が見つかりませんでした。(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
+            showNoCommentDialog('似たタイトルの動画が見つかりませんでした');
             return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           case 'search_error':
             console.error(`検索に失敗しました。(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
             return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           case 'included_in_ignore_list':
             console.error(`非表示リストに含まれているため何もしませんでした。(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
+            showNoCommentDialog('この動画はコメント非表示リストに含まれています');
             return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           default:
             console.error(error);
@@ -125,17 +109,67 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
   };
 };
 
-const ignoreDialog = new IgnoreDialog(document.body);
+function fetchAnotherVideo(threadId, videoInfo) {
+  const selectedAnotherVideo = SelectedPairsStorage.get(threadId);
+  if (selectedAnotherVideo) {
+    console.info(`指定された動画があったのでそれを採用しました(${selectedAnotherVideo.threadId}:${selectedAnotherVideo.title})`);
+    return Promise.resolve({
+      anotherThreadId: selectedAnotherVideo.threadId,
+      anotherTitle: selectedAnotherVideo.title
+    });
+  }
 
-function showIgnoreDialog(threadId, anotherThreadId, title) {
-  ignoreDialog.show(
-    title,
-    () => {
-      if (!IgnorePairsStorage.includes(threadId, anotherThreadId)) {
-        IgnorePairsStorage.add(threadId, anotherThreadId);
+  return SearchAPI.fetch(buildSearchWord(videoInfo.title))
+    .then((json) => {
+      if (!json.data) {
+        return Promise.reject('search_error');
       }
+
+      // 動画の長さとして元動画の前後 20% を許容（25分の動画の場合20分から30分までOK）
+      const allowedMinLength = videoInfo.duration * 0.8;
+      const allowedMaxLength = videoInfo.duration * 1.2;
+      const maybeAnotherVideo = json.data.find((video) => {
+        return (
+          `${video.threadId}` !== threadId &&
+          !!video.channelId &&
+          (allowedMinLength <= video.lengthSeconds && video.lengthSeconds <= allowedMaxLength)
+        );
+      });
+      if (!maybeAnotherVideo) {
+        return Promise.reject('notfound');
+      }
+      if (IgnoreIdsStorage.includes(threadId)) {
+        return Promise.reject('included_in_ignore_list');
+      }
+
+      console.info(`別の動画が見つかりました(${maybeAnotherVideo.threadId}:${maybeAnotherVideo.title})`);
+      return {
+        anotherThreadId: maybeAnotherVideo.threadId,
+        anotherTitle: maybeAnotherVideo.title
+      };
+    });
+}
+
+const dialog = new Dialog(document.body);
+
+function showIgnoreDialog(threadId, title) {
+  dialog.show(
+    `「<span style="font-weight: bold;">${title}</span>」のコメントも表示しています<br/>>この動画では別動画のコメントを表示しない`,
+    '#ea5632',
+    () => {
+      if (!IgnoreIdsStorage.includes(threadId)) {
+        IgnoreIdsStorage.add(threadId);
+      }
+      SelectedPairsStorage.remove(threadId);
       location.reload();
     }
+  );
+}
+
+function showNoCommentDialog(message) {
+  dialog.show(
+    `<span style="font-weight: bold;">${message}</span><br/>ブラウザ右上のアイコンから流すコメントの動画を選択できます`,
+    '#ea5632'
   );
 }
 

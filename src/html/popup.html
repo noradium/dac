@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="../styles/popup.css">
+</head>
+<body>
+	<div class="Selector">
+		<div class="Caption">
+			流すコメントの動画を選択
+		</div>
+		<div class="Search">
+			<input class="SearchInput" type="text"/>
+			<button class="SearchButton" type="button">検索</button>
+		</div>
+		<ul class="List">
+		</ul>
+		<template id="list-item-template">
+			<li class="ListItem">
+				<div class="Thumbnail">
+					<img class="Image" src="" alt=""/>
+					<span class="Duration"></span>
+					<span class="ChannelLabel">ch</span>
+				</div>
+				<div class="Info">
+					<div class="Title"></div>
+					<div class="CommentCounter"></div>
+				</div>
+			</li>
+		</template>
+		<div class="NoItemMessage">
+			動画が見つかりませんでした
+		</div>
+	</div>
+	<div class="NoTargetMessage">
+		「dアニメストア ニコニコ支店」の動画ではないため利用できません。
+	</div>
+	<script src="../scripts/popup.js"></script>
+</body>
+</html>
