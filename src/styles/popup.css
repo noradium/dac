@@ -1,0 +1,119 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 400px;
+}
+
+.Caption {
+  padding: 4px;
+  font-size: 18px;
+}
+
+.Search {
+  display: flex;
+  padding: 4px;
+  height: 36px;
+}
+
+.Search .SearchInput {
+  flex: 1;
+  line-height: 36px;
+  font-size: 14px;
+  outline: none;
+}
+
+.Search .SearchButton {
+  background-color: #007cff;
+  color: #fff;
+  border: none;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+.List {
+  list-style: none;
+  padding: 0;
+}
+
+.ListItem {
+  padding: 4px;
+  display: flex;
+  cursor: pointer;
+  border-bottom: solid 1px #ccc;
+}
+
+.ListItem:first-child {
+  border-top: solid 1px #ccc;
+}
+
+.NoItemMessage {
+  display: none;
+  text-align: center;
+  font-size: 18px;
+  padding: 8px;
+}
+
+.ListItem:hover {
+  background-color: #eee;
+}
+
+.ListItem .Thumbnail {
+  width: 112px;
+  height: 64px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ListItem .Thumbnail .Image {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ListItem .Thumbnail .Duration {
+  position: absolute;
+  background-color: rgba(0,0,0,.6);
+  z-index: 2;
+  color: #fff;
+  right: 0;
+  bottom: 0;
+  padding: 4px;
+}
+
+.ListItem .Thumbnail .ChannelLabel {
+  position: absolute;
+  padding: 1px 4px;
+  color: #cc9900;
+  background-color: #fff;
+  border: solid 1px #cc9900;
+}
+
+.ListItem .Info {
+  position: relative;
+  margin-left: 4px;
+  flex: 1;
+}
+
+.ListItem .Info .Title {
+  font-size: 14px;
+}
+
+.ListItem .Info .CommentCounter {
+  position: absolute;
+  bottom: 0;
+}
+
+.ListItem .Info .CommentCounter:before {
+  content: 'コメント:';
+}
+
+.NoTargetMessage {
+  display: none;
+  font-size: 16px;
+  padding: 8px;
+}
