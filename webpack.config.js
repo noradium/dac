@@ -3,7 +3,8 @@ module.exports = {
   entry: {
     'index': './index.js',
     'hack_fetch_thread': './hack_fetch_thread.js',
-    'background': './background.js'
+    'background': './background.js',
+    'popup': './popup.js'
   },
   output: {
     path: __dirname + '/dist/scripts',
