@@ -24,3 +24,10 @@ chrome.webRequest.onHeadersReceived.addListener(
   {urls: ['<all_urls>']},
   ["blocking", "responseHeaders"]
 );
+
+// pageAction の表示切り替え
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (tab.url.indexOf("http://www.nicovideo.jp/watch") !== -1) {
+    chrome.pageAction.show(tabId);
+  }
+});

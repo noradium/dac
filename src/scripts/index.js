@@ -1,6 +1,24 @@
+import VideoInfo from './modules/video_info';
+import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
+import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
+
 inject(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
 inject(`${getWatchAppJsURI()}&by-danime-another-comment`);
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  switch (message.type) {
+    case 'getVideoInfo':
+      sendResponse((new VideoInfo()).toJSON());
+      break;
+    case 'anotherThreadIdSelected':
+      if (IgnoreIdsStorage.includes(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId)) {
+        IgnoreIdsStorage.remove(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId);
+      }
+      SelectedPairsStorage.add(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId, message.data.threadId, message.data.title);
+      location.reload();
+      break;
+  }
+});
 
 // --- utils ---
 function inject(src) {
