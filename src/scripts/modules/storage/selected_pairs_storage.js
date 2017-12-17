@@ -1,16 +1,24 @@
 export default class SelectedPairsStorage {
   static DANIME_ANOTHER_COMMENT_SELECTED_PAIRS_KEY = 'danime-another-comment-selected-pairs';
+  static VERSION = '1';
+
+  static migration() {
+    if (window.localStorage.getItem(this.DANIME_ANOTHER_COMMENT_SELECTED_PAIRS_KEY + '-version') === this.VERSION) {
+      return;
+    }
+    window.localStorage.setItem(this.DANIME_ANOTHER_COMMENT_SELECTED_PAIRS_KEY + '-version', this.VERSION);
+
+    // 今回チャンネルIDなどを増やすがそれらを取得する準備ができてないので消しちゃう
+    this._setSelectedIdPairs({});
+  }
 
   static get(threadId) {
     return this._getSelectedIdPairs()[threadId];
   }
 
-  static add(threadId, anotherThreadId, title) {
+  static add(threadId, video) {
     const pairs = this._getSelectedIdPairs();
-    pairs[threadId] = {
-      threadId: anotherThreadId,
-      title: title
-    };
+    pairs[threadId] = video;
     this._setSelectedIdPairs(pairs);
   }
 

@@ -31,6 +31,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
 
     const videoInfo = new VideoInfo();
 
+    console.log(fetchThreadArguments.raw);
     // dアニじゃないタイトルが似た動画のthreadId
     let anotherThreadId = null;
     let anotherTitle = null;
@@ -53,13 +54,13 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
     alreadyFetchedOriginalThreadId = fetchThreadArguments.defaultThreadId;
 
     return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
-      .then((anotherVideo) => {
-        anotherThreadId = anotherVideo.anotherThreadId;
-        anotherTitle = anotherVideo.anotherTitle;
+      .then((data) => {
+        anotherThreadId = data.video.threadId;
+        anotherTitle = data.video.title;
 
         fetchThreadArguments.append(this.createThread({
           id: anotherThreadId,
-          isPrivate: true, // isPrivate を true にしないと取得できない。
+          isPrivate: !!data.video.channelId, // チャンネル動画のときは true, チャンネルじゃないときは false で取得されてる。
           leafExpression: fetchThreadArguments.get(0).thread.leafExpression, // わからんので他のと同じのを渡しておく
           language: 0
         }));
@@ -70,7 +71,7 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
           return thread.id === fetchThreadArguments.regularThreadId && !thread.isPrivate;
         });
         const anotherThreadIndex = threads.findIndex((thread) => {
-          return thread.id === anotherThreadId && thread.isPrivate;
+          return thread.id === anotherThreadId;
         });
 
         // anotherThread で取得した内容を元の動画の通常コメントを表す thread に詰め直す。ちょっと壊れそうだけど動いた
@@ -114,8 +115,7 @@ function fetchAnotherVideo(threadId, videoInfo) {
   if (selectedAnotherVideo) {
     console.info(`指定された動画があったのでそれを採用しました(${selectedAnotherVideo.threadId}:${selectedAnotherVideo.title})`);
     return Promise.resolve({
-      anotherThreadId: selectedAnotherVideo.threadId,
-      anotherTitle: selectedAnotherVideo.title
+      video: selectedAnotherVideo
     });
   }
 
@@ -144,8 +144,7 @@ function fetchAnotherVideo(threadId, videoInfo) {
 
       console.info(`別の動画が見つかりました(${maybeAnotherVideo.threadId}:${maybeAnotherVideo.title})`);
       return {
-        anotherThreadId: maybeAnotherVideo.threadId,
-        anotherTitle: maybeAnotherVideo.title
+        video: maybeAnotherVideo
       };
     });
 }
