@@ -45,7 +45,8 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
       console.info('対象外の動画なので処理しません');
       return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
-    if (alreadyFetchedOriginalThreadId === fetchThreadArguments.defaultThreadId) {
+    // whenSec(過去ログのとき値が入っている)が指定されておらず、すでに取得済みだったら新しく取得しない
+    if (!fetchThreadArguments.get(0).thread._whenSec && alreadyFetchedOriginalThreadId === fetchThreadArguments.defaultThreadId) {
       console.info('この動画ではすでに取得済みなので取得しません');
       return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
@@ -62,7 +63,8 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
           id: anotherThreadId,
           isPrivate: !!data.video.channelId, // チャンネル動画のときは true, チャンネルじゃないときは false で取得されてる。
           leafExpression: fetchThreadArguments.get(0).thread.leafExpression, // わからんので他のと同じのを渡しておく
-          language: 0
+          language: 0,
+          whenSec: fetchThreadArguments.get(0).thread.whenSec ? fetchThreadArguments.get(0).thread.whenSec : void 0
         }));
         return originalFetchThread.call(this, ...fetchThreadArguments.raw);
       })
