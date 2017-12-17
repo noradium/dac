@@ -70,8 +70,7 @@ function updateList(searchAPIResponse) {
     }
     clone.querySelector('.ListItem .Info .Title').innerText = video.title;
     clone.querySelector('.ListItem .Info .CommentCounter').innerText = video.commentCounter;
-    clone.querySelector('.ListItem').setAttribute('data-threadId', video.threadId);
-    clone.querySelector('.ListItem').setAttribute('data-title', video.title);
+    clone.querySelector('.ListItem').setAttribute('data-video', JSON.stringify(video));
     documentFragment.appendChild(clone);
   });
   document.querySelector('.List').appendChild(documentFragment);
@@ -81,8 +80,7 @@ function updateList(searchAPIResponse) {
       sendMessageToCurrentTab({
         type: 'anotherThreadIdSelected',
         data: {
-          threadId: e.currentTarget.getAttribute('data-threadId'),
-          title: e.currentTarget.getAttribute('data-title')
+          video: JSON.parse(e.currentTarget.getAttribute('data-video'))
         }
       });
     });
