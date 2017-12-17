@@ -24,7 +24,7 @@ document.querySelector('.SearchInput').addEventListener('keypress', (e) => {
 });
 
 function searchAndUpdateList(word) {
-  SearchAPI.fetch(word, 50)
+  SearchAPI.fetch(word, 100)
     .then(json => {
       updateList(json);
     });
