@@ -33,6 +33,31 @@ body {
   cursor: pointer;
 }
 
+.Alpha {
+  display: flex;
+  padding: 4px;
+  height: 36px;
+}
+
+.Alpha .AlphaInput {
+  flex: 1;
+}
+
+.Alpha .AlphaValue {
+  text-align: center;
+  width: 48px;
+  line-height: 28px;
+  font-size: 16px;
+}
+
+.Alpha .AlphaApplyButton {
+  background-color: #cb6167;
+  color: #fff;
+  border: none;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
 .List {
   list-style: none;
   padding: 0;
