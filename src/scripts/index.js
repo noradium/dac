@@ -1,6 +1,7 @@
 import VideoInfo from './modules/video_info';
 import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
 import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
+import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
 
 SelectedPairsStorage.migration();
 
@@ -17,6 +18,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         IgnoreIdsStorage.remove(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId);
       }
       SelectedPairsStorage.add(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId, message.data.video);
+      location.reload();
+      break;
+    case 'getCurrentCommentAlpha':
+      sendResponse(CommentAlphaStorage.get());
+      break;
+    case 'commentAlphaSelected':
+      CommentAlphaStorage.set(message.data.alpha);
       location.reload();
       break;
   }
