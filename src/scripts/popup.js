@@ -1,6 +1,37 @@
 import buildSearchWord from "./modules/build_search_word";
 import SearchAPI from "./modules/search_api";
 
+/**
+ * コメント透明度の初期化
+ */
+sendMessageToCurrentTab({type: 'getCurrentCommentAlpha'}, (currentCommentAlpha) => {
+  const alphaInput = document.querySelector('.AlphaInput');
+  const alphaValueSpan = document.querySelector('.AlphaValue');
+  const alphaApplyButton = document.querySelector('.AlphaApplyButton');
+
+  alphaInput.value = currentCommentAlpha;
+  alphaValueSpan.innerText = currentCommentAlpha;
+
+  alphaInput.addEventListener('input', (e) => {
+    alphaValueSpan.innerText = e.target.value;
+  });
+  alphaInput.addEventListener('change', (e) => {
+    alphaValueSpan.innerText = e.target.value;
+  });
+  alphaApplyButton.addEventListener('click', (e) => {
+    window.close();
+    sendMessageToCurrentTab({
+      type: 'commentAlphaSelected',
+      data: {
+        alpha: alphaInput.value
+      }
+    });
+  });
+});
+
+/**
+ * 動画リストの初期化やらなんやら
+ */
 sendMessageToCurrentTab({type: 'getVideoInfo'}, (videoInfoJSON) => {
   if (videoInfoJSON.channelId !== 'ch2632720') {
     document.querySelector('.Selector').style.display = 'none';

@@ -5,11 +5,16 @@ import buildSearchWord from "./modules/build_search_word";
 import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
 import Dialog from "./modules/dialog";
 import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
+import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
 
 window.original_watch_dll = window.watch_dll;
 
 // TODO: プロパティ名 m 固定値じゃ多分まずいよなあ
 const libraryFunctions = original_watch_dll.m;
+
+/////////////////////////
+// fetchThread を書き換える
+
 const commentClientFunctionIndex = libraryFunctions.findIndex((item) => {
   // fetchThread の定義があったらきっとそれがコメント取得するライブラリ
   return !!item.toString().match(/\.prototype\.fetchThread\s?=\s?function/);
@@ -173,6 +178,35 @@ function showNoCommentDialog(message) {
     '#ea5632'
   );
 }
+
+///////////////////////
+// _renderCanvas を書き換える
+
+const renderCanvasFunctionIndex = libraryFunctions.findIndex((item) => {
+  // _renderCanvas の定義とか globalAlpha の設定箇所があったらそれが、コメントをcanvasレンダリングするライブラリ
+  return (
+    !!item.toString().match(/\.prototype\._renderCanvas\s?=\s?function/) &&
+    !!item.toString().match(/\.context\.globalAlpha\s?=/)
+  );
+});
+
+const commentAlpha = CommentAlphaStorage.get();
+
+const libraryFunction = libraryFunctions[renderCanvasFunctionIndex];
+libraryFunctions[renderCanvasFunctionIndex] = function (t, e, n) {
+  libraryFunction(t, e, n);
+  const originalRenderCanvas = t.exports.prototype._renderCanvas;
+  t.exports.prototype._renderCanvas = function (t) {
+    // この時点で this.worldAlpha に指定されているアルファ値でコメントがレンダリングされる
+    // dアニメの動画を見た時、
+    // dアニメ側のコメントを表示しているチャンネルコメントは this.worldAlpha === 1
+    // 別動画のコメントを表示している通常コメントは this.worldAlpha === 0.5
+    if (this.worldAlpha === 0.5) {
+      this.worldAlpha = commentAlpha;
+    }
+    originalRenderCanvas.call(this, ...arguments);
+  };
+};
 
 window.watch_dll = function (r) {
   return original_watch_dll(r);
