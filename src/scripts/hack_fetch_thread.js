@@ -43,11 +43,13 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
 
     if (document.querySelector('.EditorMenuContainer')) {
       console.info('投稿者編集が利用できる環境のため処理しません');
+      alreadyFetchedOriginalThreadId = null;
       return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
     // dアニメストア ニコニコ支店 以外は処理しません
     if (!videoInfo.isChannel || videoInfo.channelId !== 'ch2632720') {
       console.info('対象外の動画なので処理しません');
+      alreadyFetchedOriginalThreadId = null;
       return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
     // whenSec(過去ログのとき値が入っている)が指定されておらず、すでに取得済みだったら新しく取得しない
