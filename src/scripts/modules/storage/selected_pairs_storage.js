@@ -28,6 +28,10 @@ export default class SelectedPairsStorage {
     this._setSelectedIdPairs(pairs);
   }
 
+  static removeAll() {
+    window.localStorage.removeItem(this.DANIME_ANOTHER_COMMENT_SELECTED_PAIRS_KEY);
+  }
+
   /**
    * selectedIdPairs の配列を localStorage から取得して返します
    * @return {object}
@@ -38,6 +42,7 @@ export default class SelectedPairsStorage {
     try {
       return pairs ? JSON.parse(pairs) : {};
     } catch (e) {
+      console.error('selected-id-pairs のパースに失敗', e, pairs);
     }
     return {};
   }
