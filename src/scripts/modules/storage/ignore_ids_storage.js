@@ -16,6 +16,10 @@ export default class IgnoreIdsStorage {
     this._setThreadIds(threadIds.filter((id) => id !== threadId));
   }
 
+  static removeAll() {
+    window.localStorage.removeItem(this.DANIME_ANOTHER_COMMENT_IGNORE_THREAD_IDS_KEY);
+  }
+
   /**
    * ignorePair の配列を localStorage から取得して返します
    * @return {string[]}
@@ -26,6 +30,7 @@ export default class IgnoreIdsStorage {
     try {
       return threadIds ? JSON.parse(threadIds) : [];
     } catch (e) {
+      console.error('ignore-ids のパースに失敗', e, threadIds);
     }
     return [];
   }

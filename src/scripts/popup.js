@@ -54,6 +54,15 @@ document.querySelector('.SearchInput').addEventListener('keypress', (e) => {
   }
 });
 
+document.querySelector('.ResetAllSettings').addEventListener('click', (e) => {
+  sendMessageToCurrentTab({type: 'resetAllSettings'}, () => {
+    document.querySelector('.ResetAllSettingsMessage').innerText = '削除しました';
+    setTimeout(() => {
+      document.querySelector('.ResetAllSettingsMessage').innerText = '';
+    }, 3000);
+  });
+});
+
 function searchAndUpdateList(word) {
   SearchAPI.fetch(word, 100)
     .then(json => {
