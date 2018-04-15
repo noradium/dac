@@ -27,6 +27,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       CommentAlphaStorage.set(message.data.alpha);
       location.reload();
       break;
+    case 'resetAllSettings':
+      CommentAlphaStorage.remove();
+      SelectedPairsStorage.removeAll();
+      IgnoreIdsStorage.removeAll();
+      break;
   }
 });
 
