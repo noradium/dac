@@ -7,6 +7,15 @@ body {
   width: 400px;
 }
 
+.Message {
+  padding: 4px;
+  font-size: 16px;
+}
+
+.Message .ErrorMessage {
+  color: red;
+}
+
 .Caption {
   padding: 4px;
   font-size: 18px;

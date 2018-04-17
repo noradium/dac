@@ -19,12 +19,18 @@ sendMessageToCurrentTab({type: 'getCurrentCommentAlpha'}, (currentCommentAlpha) 
     alphaValueSpan.innerText = e.target.value;
   });
   alphaApplyButton.addEventListener('click', (e) => {
-    window.close();
     sendMessageToCurrentTab({
       type: 'commentAlphaSelected',
       data: {
         alpha: alphaInput.value
       }
+    }, response => {
+      if (response.status === 'error') {
+        showErrorMessage(`${response.error.name}: ${response.error.message}`);
+        return;
+      }
+      window.close();
+      sendMessageToCurrentTab({type: 'reload'});
     });
   });
 });
@@ -116,12 +122,18 @@ function updateList(searchAPIResponse) {
   document.querySelector('.List').appendChild(documentFragment);
   document.querySelectorAll('.List .ListItem').forEach(item => {
     item.addEventListener('click', (e) => {
-      window.close();
       sendMessageToCurrentTab({
         type: 'anotherThreadIdSelected',
         data: {
           video: JSON.parse(e.currentTarget.getAttribute('data-video'))
         }
+      }, response => {
+        if (response.status === 'error') {
+          showErrorMessage(`${response.error.name}: ${response.error.message}`);
+          return;
+        }
+        window.close();
+        sendMessageToCurrentTab({type: 'reload'});
       });
     });
   });
@@ -129,4 +141,8 @@ function updateList(searchAPIResponse) {
 
 function formatDuration(lengthSeconds) {
   return `${Math.floor(lengthSeconds / 60)}:${`0${lengthSeconds % 60}`.slice(-2)}`;
+}
+
+function showErrorMessage(message) {
+  document.querySelector('.Message .ErrorMessage').innerText = message;
 }
