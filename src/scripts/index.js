@@ -14,23 +14,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse((new VideoInfo()).toJSON());
       break;
     case 'anotherThreadIdSelected':
-      if (IgnoreIdsStorage.includes(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId)) {
-        IgnoreIdsStorage.remove(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId);
+      try {
+        if (IgnoreIdsStorage.includes(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId)) {
+          IgnoreIdsStorage.remove(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId);
+        }
+        SelectedPairsStorage.add(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId, message.data.video);
+        sendResponse({status: 'success'});
+      } catch (error) {
+        // error をそのまま渡すと中身が何故か空のオブジェクトになってしまうので、ここで展開してから渡す
+        sendResponse({status: 'error', error: {name: error.name, message: error.message}});
       }
-      SelectedPairsStorage.add(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId, message.data.video);
-      location.reload();
       break;
     case 'getCurrentCommentAlpha':
       sendResponse(CommentAlphaStorage.get());
       break;
     case 'commentAlphaSelected':
-      CommentAlphaStorage.set(message.data.alpha);
-      location.reload();
+      try {
+        CommentAlphaStorage.set(message.data.alpha);
+        sendResponse({status: 'success'});
+      } catch (error) {
+        sendResponse({status: 'error', error: {name: error.name, message: error.message}});
+      }
       break;
     case 'resetAllSettings':
       CommentAlphaStorage.remove();
       SelectedPairsStorage.removeAll();
       IgnoreIdsStorage.removeAll();
+      break;
+    case 'reload':
+      location.reload();
       break;
   }
 });
