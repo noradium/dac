@@ -46,4 +46,16 @@ export default class FetchThreadArguments {
     };
     this._arguments.length += 1;
   }
+
+  isOfficialAnotherThreadExist() {
+    const ids = [];
+    for (let i = 0; i < this._arguments.length; ++i) {
+      const id = this._arguments[i].thread.id;
+      if (!ids.includes(id)) {
+        ids.push(id);
+      }
+    }
+    // 公式の引用コメントが存在しない時は2種類のidがあり、存在する場合idは3種類
+    return ids.length > 2;
+  }
 }
