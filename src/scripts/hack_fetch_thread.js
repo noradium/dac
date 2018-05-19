@@ -52,6 +52,11 @@ libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
       alreadyFetchedOriginalThreadId = null;
       return originalFetchThread.call(this, ...fetchThreadArguments.raw);
     }
+    if (fetchThreadArguments.isOfficialAnotherThreadExist()) {
+      console.info('公式の引用コメントが存在するので処理しません');
+      alreadyFetchedOriginalThreadId = null;
+      return originalFetchThread.call(this, ...fetchThreadArguments.raw);
+    }
     // whenSec(過去ログのとき値が入っている)が指定されておらず、すでに取得済みだったら新しく取得しない
     if (!fetchThreadArguments.get(0).thread._whenSec && alreadyFetchedOriginalThreadId === fetchThreadArguments.defaultThreadId) {
       console.info('この動画ではすでに取得済みなので取得しません');
