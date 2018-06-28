@@ -14,7 +14,7 @@ try {
 }
 
 function init() {
-  const libraryFunctions = window['webpackJsonp'][0][1][0];
+  const libraryFunctions = window['webpackJsonp'][0][1];
 
 /////////////////////////
 // fetchThread を書き換える
