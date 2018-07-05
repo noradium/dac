@@ -5,7 +5,7 @@
   "content_scripts": [
     {
       "matches": [
-        "http://www.nicovideo.jp/watch/*"
+        "*://www.nicovideo.jp/watch/*"
       ],
       "js": [
         "scripts/index.js"
@@ -22,9 +22,9 @@
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "http://nicovideo.cdn.nimg.jp/web/scripts/pages/watch/watch_app.js",
-    "http://api.search.nicovideo.jp/api/v2/video/contents/search",
+    "*://nicovideo.cdn.nimg.jp/web/scripts/pages/watch/watch_app.js",
+    "*://api.search.nicovideo.jp/api/v2/video/contents/search",
     "tabs",
-    "http://www.nicovideo.jp/watch/*"
+    "*://www.nicovideo.jp/watch/*"
   ]
 }
