@@ -59,7 +59,7 @@ function inject(src) {
 function getWatchAppJsURI() {
   const scriptTags = Array.from(document.getElementsByTagName('script'));
   const target = scriptTags.filter((script) => {
-    return script.src.indexOf('http://nicovideo.cdn.nimg.jp/web/scripts/pages/watch/watch_app.js') >= 0;
+    return script.src.indexOf('watch_app.js') >= 0;
   })[0];
   return target.src;
 }
