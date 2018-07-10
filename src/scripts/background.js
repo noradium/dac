@@ -1,7 +1,7 @@
 // watch_dll.js を改変したあとに watch_app.js をロードするためもとのリクエストは止める
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
-    if (details.url.indexOf('watch_app.js') >= 0) {
+    if (/watch_app_.*\.js/.test(details.url)) {
       return {cancel: details.url.indexOf('by-danime-another-comment') === -1};
     }
   },
