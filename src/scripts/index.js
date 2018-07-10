@@ -6,7 +6,8 @@ import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
 SelectedPairsStorage.migration();
 
 inject(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
-inject(`${getWatchAppJsURI()}&by-danime-another-comment`);
+const watchAppJsURI = getWatchAppJsURI();
+inject(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
@@ -58,8 +59,9 @@ function inject(src) {
 
 function getWatchAppJsURI() {
   const scriptTags = Array.from(document.getElementsByTagName('script'));
+  const watchAppJsRegExp = /watch_app_.*\.js/;
   const target = scriptTags.filter((script) => {
-    return script.src.indexOf('watch_app.js') >= 0;
+    return watchAppJsRegExp.test(script.src);
   })[0];
   return target.src;
 }
