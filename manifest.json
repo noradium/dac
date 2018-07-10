@@ -22,7 +22,7 @@
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "*://nicovideo.cdn.nimg.jp/web/scripts/pages/watch/watch_app.js",
+    "*://nicovideo.cdn.nimg.jp/web/scripts/pages/watch/watch_app_*.js",
     "*://api.search.nicovideo.jp/api/v2/video/contents/search",
     "tabs",
     "*://www.nicovideo.jp/watch/*"
