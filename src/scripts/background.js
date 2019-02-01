@@ -13,11 +13,14 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.webRequest.onHeadersReceived.addListener(
   (details) => {
     if (details.url.indexOf('//api.search.nicovideo.jp/api/v2/video/contents/search') !== -1) {
-      const additionalHeader = {
+      details.responseHeaders.push({
         name: "Access-Control-Allow-Origin",
         value: '*'
-      };
-      details.responseHeaders.push(additionalHeader);
+      });
+      details.responseHeaders.push({
+        name: 'Content-Type',
+        value: 'application/json; charset=utf-8'
+      });
       return {responseHeaders: details.responseHeaders};
     }
   },
