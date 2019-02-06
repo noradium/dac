@@ -121,7 +121,7 @@ function init() {
               return originalFetchThread.call(this, ...fetchThreadArguments.raw);
             default:
               console.error(error);
-              return Promise.reject(error);
+              return originalFetchThread.call(this, ...fetchThreadArguments.raw);
           }
         });
     };
