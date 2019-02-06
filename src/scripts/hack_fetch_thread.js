@@ -136,7 +136,7 @@ function init() {
       });
     }
 
-    return SearchAPI.fetch(buildSearchWord(videoInfo.title))
+    return fetchWithContentScript(buildSearchWord(videoInfo.title), 10)
       .then((json) => {
         if (!json.data) {
           return Promise.reject('search_error');
@@ -164,6 +164,35 @@ function init() {
           video: maybeAnotherVideo
         };
       });
+  }
+
+  // content_script を経由して background で検索APIを叩き結果を返す
+  // windows で CORB に引っかかるようになったのでそれを回避するため
+  function fetchWithContentScript(word, limit) {
+    return new Promise((resolve, reject) => {
+      function onWindowMessage(event) {
+        if (event.origin.indexOf('www.nicovideo.jp') < 0) {
+          return;
+        }
+        if (typeof event.data.type !== 'string' || event.data.type !== 'danime-another-comment:background-search-result') {
+          return;
+        }
+        window.removeEventListener('message', onWindowMessage);
+        if (event.data.response.error) {
+          reject(event.data.response.error);
+        }
+        resolve(event.data.response.result);
+      }
+
+      window.addEventListener('message', onWindowMessage);
+      // content_script(index.js)に向けたメッセージ
+      window.postMessage({type: 'danime-another-comment:background-search', word, limit}, location.origin);
+
+      setTimeout(() => {
+        window.removeEventListener('message', onWindowMessage);
+        reject('background-search timeout');
+      }, 5000);
+    });
   }
 
   const dialog = new Dialog(document.body);

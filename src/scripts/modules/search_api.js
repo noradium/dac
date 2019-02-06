@@ -4,9 +4,7 @@
  */
 export default class SearchAPI {
   static fetch(word, limit = 10) {
-    return window.fetch(`https://api.search.nicovideo.jp/api/v2/video/contents/search?q=${encodeURIComponent(word)}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId,lengthSeconds,thumbnailUrl,commentCounter&_limit=${limit}&_context=danime-another-comment`, {
-      mode: 'cors'
-    })
+    return window.fetch(`https://api.search.nicovideo.jp/api/v2/video/contents/search?q=${encodeURIComponent(word)}&targets=title&_sort=-commentCounter&fields=title,threadId,channelId,lengthSeconds,thumbnailUrl,commentCounter&_limit=${limit}&_context=danime-another-comment`)
       .catch((error) => {
         return Promise.reject('search_error');
       })
