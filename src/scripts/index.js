@@ -51,7 +51,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // injected script (hack_fetch_thread.js) と通信するためのもの
 window.addEventListener('message', event => {
-  if (event.origin.indexOf('www.nicovideo.jp') < 0 || typeof event.data.type !== 'string') {
+  if (event.origin !== location.origin || typeof event.data.type !== 'string') {
     return;
   }
   switch (event.data.type) {
@@ -63,7 +63,7 @@ window.addEventListener('message', event => {
           window.postMessage({
             type: 'danime-another-comment:background-search-result',
             response
-          }, '*');
+          }, location.origin);
         }
       );
       break;

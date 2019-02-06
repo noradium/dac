@@ -171,7 +171,7 @@ function init() {
   function fetchWithContentScript(word, limit) {
     return new Promise((resolve, reject) => {
       function onWindowMessage(event) {
-        if (event.origin.indexOf('www.nicovideo.jp') < 0) {
+        if (event.origin !== location.origin) {
           return;
         }
         if (typeof event.data.type !== 'string' || event.data.type !== 'danime-another-comment:background-search-result') {
