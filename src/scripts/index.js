@@ -9,6 +9,7 @@ inject(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
 const watchAppJsURI = getWatchAppJsURI();
 inject(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
 
+// background.js と通信するためのもの
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case 'getVideoInfo':
@@ -44,6 +45,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     case 'reload':
       location.reload();
+      break;
+  }
+});
+
+// injected script (hack_fetch_thread.js) と通信するためのもの
+window.addEventListener('message', event => {
+  if (event.origin.indexOf('www.nicovideo.jp') < 0 || typeof event.data.type !== 'string') {
+    return;
+  }
+  switch (event.data.type) {
+    case 'danime-another-comment:background-search':
+      // background へ検索リクエストを送る
+      chrome.runtime.sendMessage(
+        {command: 'search', word: event.data.word, limit: event.data.limit},
+        (response) => {
+          window.postMessage({
+            type: 'danime-another-comment:background-search-result',
+            response
+          }, '*');
+        }
+      );
       break;
   }
 });

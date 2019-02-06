@@ -1,4 +1,7 @@
+
 // watch_dll.js を改変したあとに watch_app.js をロードするためもとのリクエストは止める
+import SearchAPI from './modules/search_api';
+
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     if (/watch_app_.*\.js/.test(details.url)) {
@@ -9,24 +12,19 @@ chrome.webRequest.onBeforeRequest.addListener(
   ['blocking']
 );
 
-// コンテンツ検索APIが Access-Control-Allow-Origin ヘッダを返してこないのでつける
-chrome.webRequest.onHeadersReceived.addListener(
-  (details) => {
-    if (details.url.indexOf('//api.search.nicovideo.jp/api/v2/video/contents/search') !== -1) {
-      details.responseHeaders.push({
-        name: "Access-Control-Allow-Origin",
-        value: '*'
-      });
-      details.responseHeaders.push({
-        name: 'Content-Type',
-        value: 'application/json; charset=utf-8'
-      });
-      return {responseHeaders: details.responseHeaders};
-    }
-  },
-  {urls: ['<all_urls>']},
-  ["blocking", "responseHeaders"]
-);
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  switch (request.command) {
+    case 'search':
+      SearchAPI.fetch(request.word, request.limit)
+        .then(json => {
+          sendResponse({result: json});
+        })
+        .catch(error => {
+          sendResponse({error});
+        });
+      return true;
+  }
+});
 
 // pageAction の表示切り替え
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
