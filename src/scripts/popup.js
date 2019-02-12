@@ -41,6 +41,7 @@ sendMessageToCurrentTab({type: 'getCurrentCommentAlpha'}, (currentCommentAlpha) 
 sendMessageToCurrentTab({type: 'getVideoInfo'}, (videoInfoJSON) => {
   if (videoInfoJSON.channelId !== 'ch2632720') {
     document.querySelector('.Selector').style.display = 'none';
+    document.querySelector('.OffsetSelector').style.display = 'none';
     document.querySelector('.NoTargetMessage').style.display = 'block';
     return;
   }
