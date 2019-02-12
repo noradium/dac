@@ -6,6 +6,8 @@ import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
 import Dialog from "./modules/dialog";
 import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
 import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
+import {GlobalVars} from './modules/global_vars';
+import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
 try {
   init();
@@ -35,7 +37,7 @@ function init() {
       const fetchThreadArguments = new FetchThreadArguments(arguments);
 
       // 今見ている動画の so なしIDをdocument経由でとる良い方法がわからないのでsessionStorageにさすクソみたいな方法で用意する。
-      sessionStorage.danimeAnotherCommentCurrentDefaultThreadId = fetchThreadArguments.defaultThreadId;
+      GlobalVars.currentDefaultThreadId = fetchThreadArguments.defaultThreadId;
 
       const videoInfo = new VideoInfo();
 
@@ -68,9 +70,11 @@ function init() {
 
       console.info(`dアニメストア ニコニコ支店の動画なので処理を開始します(${fetchThreadArguments.defaultThreadId}:${videoInfo.title})`);
       alreadyFetchedOriginalThreadId = fetchThreadArguments.defaultThreadId;
+      GlobalVars.selectedAnotherVideo = null;
 
       return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
         .then((data) => {
+          GlobalVars.selectedAnotherVideo = data.video;
           anotherThreadId = data.video.threadId;
           anotherTitle = data.video.title;
 
@@ -81,9 +85,12 @@ function init() {
             language: 0,
             whenSec: fetchThreadArguments.get(0).thread.whenSec ? fetchThreadArguments.get(0).thread.whenSec : void 0
           }));
-          return originalFetchThread.call(this, ...fetchThreadArguments.raw);
+          return Promise.all([
+            originalFetchThread.call(this, ...fetchThreadArguments.raw),
+            CommentOffsetStorage.get(fetchThreadArguments.defaultThreadId, anotherThreadId)
+          ]);
         })
-        .then((threads) => {
+        .then(([threads, offset]) => {
           const regularThreadIndex = threads.findIndex((thread) => {
             return thread.id === fetchThreadArguments.regularThreadId && !thread.isPrivate;
           });
@@ -99,6 +106,11 @@ function init() {
             }
             // thread を偽装しないとコメント一覧の方に表示されなかった
             value.thread = fetchThreadArguments.regularThreadId;
+
+            if (offset) {
+              // vpos がコメント位置。単位はセンチ秒
+              value.vpos += offset.offset * 100;
+            }
 
             threads[regularThreadIndex]._chatMap.set(newIndex, value);
             ++newIndex;

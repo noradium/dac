@@ -24,5 +24,8 @@
     "rework-npm": "^1.0.0",
     "webpack": "^2.7.0",
     "webpack-stream": "^4.0.0"
+  },
+  "dependencies": {
+    "dexie": "^2.0.4"
   }
 }
