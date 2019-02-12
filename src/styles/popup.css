@@ -67,6 +67,89 @@ body {
   cursor: pointer;
 }
 
+.OffsetSelector .Status {
+  padding: 0 4px;
+}
+
+.OffsetSelector .Status .PlayingVideo,
+.OffsetSelector .Status .SelectedVideo {
+  display: flex;
+  align-items: center;
+}
+
+.OffsetSelector .Status .Label {
+  margin-right: 4px;
+}
+
+.OffsetSelector .Status .Label:after {
+  content: ':';
+}
+
+.OffsetSelector .Status .Duration {
+  margin-right: 4px;
+}
+
+.OffsetSelector .Status .Title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.Offset {
+  margin-top: 4px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+}
+
+.Offset .OffsetInputContainer {
+  flex: 1;
+}
+
+.Offset .OffsetInput {
+  flex: 1;
+  height: 32px;
+  line-height: 32px;
+  font-size: 14px;
+  outline: none;
+}
+
+.Offset .OffsetFitHeadButton,
+.Offset .OffsetDecrementButton,
+.Offset .OffsetIncrementButton,
+.Offset .OffsetFitTailButton {
+  height: 32px;
+  background-color: #eee;
+  color: #000;
+  border: none;
+  cursor: pointer;
+}
+
+.Offset .OffsetFitHeadButton[disabled],
+.Offset .OffsetDecrementButton[disabled],
+.Offset .OffsetIncrementButton[disabled],
+.Offset .OffsetFitTailButton[disabled],
+.Offset .OffsetInput[disabled],
+.Offset .OffsetApplyButton[disabled] {
+  opacity: 0.4;
+}
+
+.Offset .OffsetInput::-webkit-outer-spin-button,
+.Offset .OffsetInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.Offset .OffsetApplyButton {
+  height: 28px;
+  background-color: #cb6167;
+  color: #fff;
+  border: none;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
 .List {
   list-style: none;
   padding: 0;
