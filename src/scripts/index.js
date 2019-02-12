@@ -2,6 +2,8 @@ import VideoInfo from './modules/video_info';
 import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
 import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
 import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
+import {GlobalVars} from './modules/global_vars';
+import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
 SelectedPairsStorage.migration();
 
@@ -17,10 +19,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     case 'anotherThreadIdSelected':
       try {
-        if (IgnoreIdsStorage.includes(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId)) {
-          IgnoreIdsStorage.remove(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId);
+        if (IgnoreIdsStorage.includes(GlobalVars.currentDefaultThreadId)) {
+          IgnoreIdsStorage.remove(GlobalVars.currentDefaultThreadId);
         }
-        SelectedPairsStorage.add(sessionStorage.danimeAnotherCommentCurrentDefaultThreadId, message.data.video);
+        SelectedPairsStorage.add(GlobalVars.currentDefaultThreadId, message.data.video);
         sendResponse({status: 'success'});
       } catch (error) {
         // error をそのまま渡すと中身が何故か空のオブジェクトになってしまうので、ここで展開してから渡す
@@ -33,6 +35,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'commentAlphaSelected':
       try {
         CommentAlphaStorage.set(message.data.alpha);
+        sendResponse({status: 'success'});
+      } catch (error) {
+        sendResponse({status: 'error', error: {name: error.name, message: error.message}});
+      }
+      break;
+    case 'getSelectedAnotherVideo':
+      sendResponse(GlobalVars.selectedAnotherVideo);
+      break;
+    case 'getCurrentCommentOffset':
+      if (!GlobalVars.selectedAnotherVideo) {
+        sendResponse(null);
+        return;
+      }
+      CommentOffsetStorage.get(GlobalVars.currentDefaultThreadId, GlobalVars.selectedAnotherVideo.threadId)
+        .then(result => sendResponse(result.offset))
+        .catch(error => sendResponse(null));
+      return true;
+    case 'setCommentOffset':
+      try {
+        CommentOffsetStorage.add(GlobalVars.currentDefaultThreadId, GlobalVars.selectedAnotherVideo.threadId, message.data.offset);
         sendResponse({status: 'success'});
       } catch (error) {
         sendResponse({status: 'error', error: {name: error.name, message: error.message}});

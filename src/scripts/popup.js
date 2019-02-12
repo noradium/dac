@@ -44,6 +44,68 @@ sendMessageToCurrentTab({type: 'getVideoInfo'}, (videoInfoJSON) => {
     document.querySelector('.NoTargetMessage').style.display = 'block';
     return;
   }
+
+  sendMessageToCurrentTab({type: 'getSelectedAnotherVideo'}, (anotherVideo) => {
+    // オフセット設定UI初期化
+    const playingVideo = document.querySelector('.OffsetSelector .PlayingVideo');
+    const selectedVideo = document.querySelector('.OffsetSelector .SelectedVideo');
+    playingVideo.querySelector('.Duration').innerText = formatDuration(videoInfoJSON.duration);
+    playingVideo.querySelector('.Title').innerText = videoInfoJSON.title;
+
+    const fitHeadButton = document.querySelector('.Offset .OffsetFitHeadButton');
+    const decrementButton = document.querySelector('.Offset .OffsetDecrementButton');
+    const offsetInput = document.querySelector('.Offset .OffsetInput');
+    const incrementButton = document.querySelector('.Offset .OffsetIncrementButton');
+    const fitTailButton = document.querySelector('.Offset .OffsetFitTailButton');
+    const offsetApplyButton = document.querySelector('.Offset .OffsetApplyButton');
+
+    if (!anotherVideo) {
+      fitHeadButton.disabled = true;
+      decrementButton.disabled = true;
+      incrementButton.disabled = true;
+      fitTailButton.disabled = true;
+      offsetInput.disabled = true;
+      offsetApplyButton.disabled = true;
+      selectedVideo.querySelector('.Duration').innerText = '--:--';
+      selectedVideo.querySelector('.Title').innerText = '-';
+    } else {
+      selectedVideo.querySelector('.Duration').innerText = formatDuration(anotherVideo.lengthSeconds);
+      selectedVideo.querySelector('.Title').innerText = anotherVideo.title;
+      fitHeadButton.addEventListener('click', () => {
+        offsetInput.value = 0;
+      });
+      decrementButton.addEventListener('click', () => {
+        offsetInput.stepDown();
+      });
+      incrementButton.addEventListener('click', () => {
+        offsetInput.stepUp();
+      });
+      fitTailButton.addEventListener('click', () => {
+        offsetInput.value = videoInfoJSON.duration - anotherVideo.lengthSeconds;
+      });
+      offsetApplyButton.addEventListener('click', () => {
+        sendMessageToCurrentTab({
+          type: 'setCommentOffset',
+          data: {
+            offset: parseInt(offsetInput.value, 10)
+          }
+        }, response => {
+          if (response.status === 'error') {
+            showErrorMessage(`${response.error.name}: ${response.error.message}`);
+            return;
+          }
+          window.close();
+          sendMessageToCurrentTab({type: 'reload'});
+        });
+      });
+    }
+
+    sendMessageToCurrentTab({type: 'getCurrentCommentOffset'}, (offset) => {
+      offsetInput.value = offset || 0;
+    });
+  });
+
+  // 検索UI初期化
   const searchWord = buildSearchWord(videoInfoJSON.title).split(' ')[0];
   updateSearchInput(searchWord);
   searchAndUpdateList(searchWord);
