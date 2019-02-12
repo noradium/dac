@@ -16,7 +16,10 @@ export default class CommentOffsetStorage {
         if (!item) {
           return this._getDB().offsets.add({threadId, anotherThreadId, offset});
         }
-        return this._getDB().offsets.update(item.id, {threadId, anotherThreadId, offset});
+        return this._getDB().offsets
+          .where('[threadId+anotherThreadId]')
+          .equals([threadId, anotherThreadId])
+          .modify({threadId, anotherThreadId, offset});
       });
   }
 
@@ -31,7 +34,7 @@ export default class CommentOffsetStorage {
   static _getDB() {
     if (!this._db) {
       this._db = new Dexie('DACCommentOffset');
-      this._db.version(1).stores({ offsets: "++id,threadId,anotherThreadId,offset" });
+      this._db.version(1).stores({ offsets: "[threadId+anotherThreadId],offset" });
     }
     return this._db;
   }
