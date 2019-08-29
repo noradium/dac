@@ -22,18 +22,21 @@ function init() {
 // fetchThread を書き換える
   const commentClientFunctionIndex = libraryFunctions.findIndex((item) => {
     // fetchThread の定義があったらきっとそれがコメント取得するライブラリ
-    return item && !!item.toString().match(/\.prototype\.fetchThread\s?=\s?function/);
+    return item && !!item.toString().match(/\.fetchThread\s?=\s?function/);
   });
-
 // 同じ動画のときは、別動画のコメントは２回以上取得しなくてもよいので記憶しておく
 // すでに別動画のコメントを取得した元動画のThreadId
   let alreadyFetchedOriginalThreadId = null;
 
   const originalCommentClientFunction = libraryFunctions[commentClientFunctionIndex];
-  libraryFunctions[commentClientFunctionIndex] = function (t, e, n) {
-    originalCommentClientFunction(t, e, n);
-    const originalFetchThread = e.default.prototype.fetchThread;
-    e.default.prototype.fetchThread = function () {
+  libraryFunctions[commentClientFunctionIndex] = function (e, t, n) {
+    originalCommentClientFunction(e, t, n);
+    const fetchThreadBlockPropertyName = Object.getOwnPropertyNames(e.exports).find((propertyName) => {
+      return e.exports[propertyName].prototype && typeof e.exports[propertyName].prototype.fetchThread === 'function';
+    });
+
+    const originalFetchThread = e.exports[fetchThreadBlockPropertyName].prototype.fetchThread;
+    e.exports[fetchThreadBlockPropertyName].prototype.fetchThread = function () {
       const fetchThreadArguments = new FetchThreadArguments(arguments);
 
       // 今見ている動画の so なしIDをdocument経由でとる良い方法がわからないのでsessionStorageにさすクソみたいな方法で用意する。

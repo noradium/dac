@@ -15,8 +15,10 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.command) {
     case 'search':
+      console.info('search start', request);
       SearchAPI.fetch(request.word, request.limit)
         .then(json => {
+          console.info('search success', json);
           sendResponse({result: json});
         })
         .catch(error => {
