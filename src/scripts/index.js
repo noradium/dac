@@ -106,6 +106,6 @@ function getWatchAppJsURI() {
   const watchAppJsRegExp = /watch_app_.*\.js/;
   const target = scriptTags.filter((script) => {
     return watchAppJsRegExp.test(script.src);
-  })[0];
+  }).pop();
   return target.src;
 }
