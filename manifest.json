@@ -2,6 +2,12 @@
   "manifest_version": 2,
   "name": "danime-another-comment",
   "version": "1.5.1",
+  "description": "dアニメストアニコニコ支店の動画にコメントが増えたように見えるchrome拡張",
+  "icons": {
+    "16": "dac_icon16.png",
+    "48": "dac_icon48.png",
+    "128": "dac_icon128.png"
+  },
   "content_scripts": [
     {
       "matches": [
