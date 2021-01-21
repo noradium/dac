@@ -16,11 +16,12 @@ try {
 }
 
 function init() {
-  const libraryFunctions = window['webpackJsonp'][0][1];
+  const libraryFunctions = window['webpackChunkwatch'][0][1];
 
 /////////////////////////
 // fetchThread を書き換える
-  const commentClientFunctionIndex = libraryFunctions.findIndex((item) => {
+  const commentClientFunctionIndex = Object.keys(libraryFunctions).find((index) => {
+    const item = libraryFunctions[index];
     // fetchThread の定義があったらきっとそれがコメント取得するライブラリ
     return item && !!item.toString().match(/\.fetchThread\s?=\s?function/);
   });
@@ -236,7 +237,8 @@ function init() {
 ///////////////////////
 // _renderCanvas を書き換える
 
-  const renderCanvasFunctionIndex = libraryFunctions.findIndex((item) => {
+  const renderCanvasFunctionIndex = Object.keys(libraryFunctions).find((index) => {
+    const item = libraryFunctions[index];
     // _renderCanvas の定義とか globalAlpha の設定箇所があったらそれが、コメントをcanvasレンダリングするライブラリ
     return (
       item &&
