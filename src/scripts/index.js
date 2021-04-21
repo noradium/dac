@@ -89,6 +89,18 @@ window.addEventListener('message', event => {
         }
       );
       break;
+    case 'danime-another-comment:background-watchdata':
+        // background へ検索リクエストを送る
+        chrome.runtime.sendMessage(
+          {command: 'watchdata', contentId: event.data.contentId},
+          (response) => {
+            window.postMessage({
+              type: 'danime-another-comment:background-watchdata-result',
+              response
+            }, location.origin);
+          }
+        );
+        break;
   }
 });
 

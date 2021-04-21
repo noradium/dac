@@ -78,32 +78,7 @@ function init() {
 
       return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
         .then(async (data) => {
-          console.log('fetchAnotherVideo')
-          console.log(data.video)
-          
-          const videojson = await fetch(`https://www.nicovideo.jp/watch/${data.video.contentId}`)
-            .then(res => res.text())
-            .then(html => {
-              const matchArr = html.match(/id="js-initial-watch-data" data-api-data="([^"]+)"/);
-              if (!matchArr) {
-                throw new Error('watch')
-              }
-              return matchArr[1];
-            }).then(htjson => {
-                const patterns = {
-                    '&lt;'   : '<',
-                    '&gt;'   : '>',
-                    '&amp;'  : '&',
-                    '&quot;' : '"',
-                    '&#x27;' : '\'',
-                    '&#x60;' : '`'
-                };
-                const json = JSON.parse(htjson.replace(/&(lt|gt|amp|quot|#x27|#x60);/g, function(match) {
-                    return patterns[match];
-                }))
-                console.log(json)
-                return json
-            })
+          const videojson = await fetchAnotherVideoWatchData(data.video.contentId)
           const anotherThread = videojson.comment.threads.find(thread => thread.label === 'community')
           anotherThreadId = anotherThread.id
           console.log(anotherThreadId)
@@ -236,6 +211,33 @@ function init() {
       window.addEventListener('message', onWindowMessage);
       // content_script(index.js)に向けたメッセージ
       window.postMessage({type: 'danime-another-comment:background-search', word, limit}, location.origin);
+
+      setTimeout(() => {
+        window.removeEventListener('message', onWindowMessage);
+        reject('background-search timeout');
+      }, 5000);
+    });
+  }
+
+  function fetchAnotherVideoWatchData(contentId) {
+    return new Promise((resolve, reject) => {
+      function onWindowMessage(event) {
+        if (event.origin !== location.origin) {
+          return;
+        }
+        if (typeof event.data.type !== 'string' || event.data.type !== 'danime-another-comment:background-watchdata-result') {
+          return;
+        }
+        window.removeEventListener('message', onWindowMessage);
+        if (event.data.response.error) {
+          reject(event.data.response.error);
+        }
+        resolve(event.data.response.result);
+      }
+
+      window.addEventListener('message', onWindowMessage);
+      // content_script(index.js)に向けたメッセージ
+      window.postMessage({type: 'danime-another-comment:background-watchdata', contentId}, location.origin);
 
       setTimeout(() => {
         window.removeEventListener('message', onWindowMessage);
