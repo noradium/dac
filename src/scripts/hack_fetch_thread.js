@@ -77,13 +77,46 @@ function init() {
       GlobalVars.selectedAnotherVideo = null;
 
       return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
-        .then((data) => {
+        .then(async (data) => {
+          console.log('fetchAnotherVideo')
+          console.log(data.video)
+          
+          const videojson = await fetch(`https://www.nicovideo.jp/watch/${data.video.contentId}`)
+            .then(res => res.text())
+            .then(html => {
+              const matchArr = html.match(/id="js-initial-watch-data" data-api-data="([^"]+)"/);
+              if (!matchArr) {
+                throw new Error('watch')
+              }
+              return matchArr[1];
+            }).then(htjson => {
+                const patterns = {
+                    '&lt;'   : '<',
+                    '&gt;'   : '>',
+                    '&amp;'  : '&',
+                    '&quot;' : '"',
+                    '&#x27;' : '\'',
+                    '&#x60;' : '`'
+                };
+                const json = JSON.parse(htjson.replace(/&(lt|gt|amp|quot|#x27|#x60);/g, function(match) {
+                    return patterns[match];
+                }))
+                console.log(json)
+                return json
+            })
+          const anotherThread = videojson.comment.threads.find(thread => thread.label === 'community')
+          anotherThreadId = anotherThread.id
+          console.log(anotherThreadId)
+          data.video.threadId = anotherThreadId
+          data.video.channelId = videojson.channel.id
+          data.video.threadkey = anotherThread.threadkey
           GlobalVars.selectedAnotherVideo = data.video;
-          anotherThreadId = data.video.threadId;
+          // anotherThreadId = data.video.threadId;
           anotherTitle = data.video.title;
 
           fetchThreadArguments.append(this.createThread({
             id: anotherThreadId,
+            threadkey: anotherThread.threadkey,
             isPrivate: !!data.video.channelId, // チャンネル動画のときは true, チャンネルじゃないときは false で取得されてる。
             leafExpression: fetchThreadArguments.get(0).thread.leafExpression, // わからんので他のと同じのを渡しておく
             language: 0,
