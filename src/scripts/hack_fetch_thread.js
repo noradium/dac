@@ -171,8 +171,6 @@ function init() {
         const allowedMaxLength = videoInfo.duration * 1.2;
         const maybeAnotherVideo = json.data.find((video) => {
           return (
-            `${video.threadId}` !== threadId &&
-            !!video.channelId &&
             (allowedMinLength <= video.lengthSeconds && video.lengthSeconds <= allowedMaxLength)
           );
         });
@@ -183,7 +181,7 @@ function init() {
           return Promise.reject('included_in_ignore_list');
         }
 
-        console.info(`別の動画が見つかりました(${maybeAnotherVideo.threadId}:${maybeAnotherVideo.title})`);
+        console.info(`別の動画が見つかりました(${maybeAnotherVideo.contentId}:${maybeAnotherVideo.title})`);
         return {
           video: maybeAnotherVideo
         };
@@ -289,6 +287,7 @@ function init() {
     libraryFunction(t, e, n);
     const originalRenderCanvas = t.exports.prototype._renderCanvas;
     t.exports.prototype._renderCanvas = function (t) {
+      console.log(this);
       // この時点で this.worldAlpha に指定されているアルファ値でコメントがレンダリングされる
       // dアニメの動画を見た時、
       // dアニメ側のコメントを表示しているチャンネルコメントは this.worldAlpha === 1
