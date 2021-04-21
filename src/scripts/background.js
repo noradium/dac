@@ -25,6 +25,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           sendResponse({error});
         });
       return true;
+    case 'watchdata':
+      fetch(`https://www.nicovideo.jp/watch/${request.contentId}`)
+            .then(res => res.text())
+            .then(html => {
+              const matchArr = html.match(/id="js-initial-watch-data" data-api-data="([^"]+)"/);
+              if (!matchArr) {
+                throw new Error('watch')
+              }
+              return matchArr[1];
+            }).then(htjson => {
+                const patterns = {
+                    '&lt;'   : '<',
+                    '&gt;'   : '>',
+                    '&amp;'  : '&',
+                    '&quot;' : '"',
+                    '&#x27;' : '\'',
+                    '&#x60;' : '`'
+                };
+                const json = JSON.parse(htjson.replace(/&(lt|gt|amp|quot|#x27|#x60);/g, function(match) {
+                    return patterns[match];
+                }))
+                console.log(json)
+                return json
+            }).then(json => {
+              sendResponse({result: json});
+            }).catch(error => {
+              sendResponse({error});
+            });
+      return true
   }
 });
 
