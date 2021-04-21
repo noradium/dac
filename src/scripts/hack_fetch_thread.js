@@ -77,13 +77,21 @@ function init() {
       GlobalVars.selectedAnotherVideo = null;
 
       return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
-        .then((data) => {
+        .then(async (data) => {
+          const videojson = await fetchAnotherVideoWatchData(data.video.contentId)
+          const anotherThread = videojson.comment.threads.find(thread => thread.label === 'community')
+          anotherThreadId = anotherThread.id
+          console.log(anotherThreadId)
+          data.video.threadId = anotherThreadId
+          data.video.channelId = videojson.channel.id
+          data.video.threadkey = anotherThread.threadkey
           GlobalVars.selectedAnotherVideo = data.video;
-          anotherThreadId = data.video.threadId;
+          // anotherThreadId = data.video.threadId;
           anotherTitle = data.video.title;
 
           fetchThreadArguments.append(this.createThread({
             id: anotherThreadId,
+            threadkey: anotherThread.threadkey,
             isPrivate: !!data.video.channelId, // チャンネル動画のときは true, チャンネルじゃないときは false で取得されてる。
             leafExpression: fetchThreadArguments.get(0).thread.leafExpression, // わからんので他のと同じのを渡しておく
             language: 0,
@@ -203,6 +211,33 @@ function init() {
       window.addEventListener('message', onWindowMessage);
       // content_script(index.js)に向けたメッセージ
       window.postMessage({type: 'danime-another-comment:background-search', word, limit}, location.origin);
+
+      setTimeout(() => {
+        window.removeEventListener('message', onWindowMessage);
+        reject('background-search timeout');
+      }, 5000);
+    });
+  }
+
+  function fetchAnotherVideoWatchData(contentId) {
+    return new Promise((resolve, reject) => {
+      function onWindowMessage(event) {
+        if (event.origin !== location.origin) {
+          return;
+        }
+        if (typeof event.data.type !== 'string' || event.data.type !== 'danime-another-comment:background-watchdata-result') {
+          return;
+        }
+        window.removeEventListener('message', onWindowMessage);
+        if (event.data.response.error) {
+          reject(event.data.response.error);
+        }
+        resolve(event.data.response.result);
+      }
+
+      window.addEventListener('message', onWindowMessage);
+      // content_script(index.js)に向けたメッセージ
+      window.postMessage({type: 'danime-another-comment:background-watchdata', contentId}, location.origin);
 
       setTimeout(() => {
         window.removeEventListener('message', onWindowMessage);
