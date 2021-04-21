@@ -287,7 +287,6 @@ function init() {
     libraryFunction(t, e, n);
     const originalRenderCanvas = t.exports.prototype._renderCanvas;
     t.exports.prototype._renderCanvas = function (t) {
-      console.log(this);
       // この時点で this.worldAlpha に指定されているアルファ値でコメントがレンダリングされる
       // dアニメの動画を見た時、
       // dアニメ側のコメントを表示しているチャンネルコメントは this.worldAlpha === 1
