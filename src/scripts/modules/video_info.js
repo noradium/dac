@@ -22,9 +22,6 @@ export default class VideoInfo {
     const channelLink = document.querySelector('.ChannelInfo-pageLink');
     this._channelId = channelLink ? channelLink.getAttribute('href').match(/^https?:\/\/ch\.nicovideo\.jp\/(ch[0-9]+)/)[1] : null;
     this._title = document.querySelector('.VideoTitle').innerText;
-    this._duration = document.querySelector('.PlayerPlayTime-duration').innerText.split(':').reduce((prev, current, index, source) => {
-      return prev + current * Math.pow(60, source.length - 1 - index);
-    }, 0);
   }
 
   get channelId() {
@@ -39,7 +36,15 @@ export default class VideoInfo {
     return this._title;
   }
 
+  /**
+   * duration は最初 0:00 の状態なので遅延させる。利用時はタイミングによっては0になるかも。注意
+   */
   get duration() {
+    if (typeof this._duration === 'undefined') {
+      this._duration = document.querySelector('.PlayerPlayTime-duration').innerText.split(':').reduce((prev, current, index, source) => {
+        return prev + current * Math.pow(60, source.length - 1 - index);
+      }, 0);
+    }
     return this._duration;
   }
 
