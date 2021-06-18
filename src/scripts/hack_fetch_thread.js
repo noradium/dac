@@ -9,6 +9,9 @@ import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
 import {GlobalVars} from './modules/global_vars';
 import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
+let fetchThreadHacked = false;
+let renderCanvasHacked = false;
+
 try {
   init();
 } catch (error) {
@@ -16,17 +19,42 @@ try {
 }
 
 function init() {
-  const libraryFunctions = window['webpackChunkwatch'][0][1];
+  for (let i = 0; i < window['webpackChunkwatch'].length; ++i) {
+    const libraryFunctions = window['webpackChunkwatch'][i][1];
+    hackLibrary(libraryFunctions);
+  }
+  console.info('danime-another-comment successfully initialized.');
+}
+let chunkwatchPush = window['webpackChunkwatch'].push;
+window['webpackChunkwatch'].push = function (item) {
+  hackLibrary(item[1]);
+  chunkwatchPush.call(this, ...arguments);
+}
 
-/////////////////////////
-// fetchThread を書き換える
+function hackLibrary(libraryFunctions) {
+  if (!fetchThreadHacked) {
+    fetchThreadHacked = hackFetchThread(libraryFunctions);
+  }
+  if (!renderCanvasHacked) {
+    renderCanvasHacked = hackRenderCanvas(libraryFunctions);
+  }
+}
+
+function hackFetchThread(libraryFunctions) {
+  /////////////////////////
+  // fetchThread を書き換える
   const commentClientFunctionIndex = Object.keys(libraryFunctions).find((index) => {
     const item = libraryFunctions[index];
     // fetchThread の定義があったらきっとそれがコメント取得するライブラリ
     return item && !!item.toString().match(/\.fetchThread\s?=\s?function/);
   });
-// 同じ動画のときは、別動画のコメントは２回以上取得しなくてもよいので記憶しておく
-// すでに別動画のコメントを取得した元動画のThreadId
+
+  if (typeof commentClientFunctionIndex === 'undefined') {
+    return false;
+  }
+
+  // 同じ動画のときは、別動画のコメントは２回以上取得しなくてもよいので記憶しておく
+  // すでに別動画のコメントを取得した元動画のThreadId
   let alreadyFetchedOriginalThreadId = null;
 
   const originalCommentClientFunction = libraryFunctions[commentClientFunctionIndex];
@@ -266,8 +294,13 @@ function init() {
     );
   }
 
-///////////////////////
-// _renderCanvas を書き換える
+  return true;
+}
+
+
+function hackRenderCanvas(libraryFunctions) {
+  ///////////////////////
+  // _renderCanvas を書き換える
 
   const renderCanvasFunctionIndex = Object.keys(libraryFunctions).find((index) => {
     const item = libraryFunctions[index];
@@ -275,12 +308,16 @@ function init() {
     return (
       item &&
       !!item.toString().match(/\.prototype\._renderCanvas\s?=\s?function/) &&
-      !!item.toString().match(/\.context\.globalAlpha\s?=/)
+      !!item.toString().match(/\.context\.globalAlpha\s?=\s?this\.worldAlpha/) &&
+      !!item.toString().match(/texture\.crop\.width/)
     );
   });
+  if (typeof renderCanvasFunctionIndex === 'undefined') {
+    return false;
+  }
 
   const commentAlpha = CommentAlphaStorage.get();
-
+  
   const libraryFunction = libraryFunctions[renderCanvasFunctionIndex];
   libraryFunctions[renderCanvasFunctionIndex] = function (t, e, n) {
     libraryFunction(t, e, n);
@@ -296,4 +333,6 @@ function init() {
       originalRenderCanvas.call(this, ...arguments);
     };
   };
+
+  return true;
 }
