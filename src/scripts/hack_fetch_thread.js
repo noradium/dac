@@ -79,11 +79,10 @@ function init() {
       return fetchAnotherVideo(fetchThreadArguments.defaultThreadId, videoInfo)
         .then(async (data) => {
           const videojson = await fetchAnotherVideoWatchData(data.video.contentId)
-          const anotherThread = videojson.comment.threads.find(thread => thread.label === 'community')
+          const anotherThread = videojson.data.comment.threads.find(thread => thread.label === 'community')
           anotherThreadId = anotherThread.id
-          console.log(anotherThreadId)
           data.video.threadId = anotherThreadId
-          data.video.channelId = videojson.channel.id
+          data.video.channelId = videojson.data.channel.id
           data.video.threadkey = anotherThread.threadkey
           GlobalVars.selectedAnotherVideo = data.video;
           // anotherThreadId = data.video.threadId;

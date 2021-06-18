@@ -26,29 +26,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       return true;
     case 'watchdata':
-      fetch(`https://www.nicovideo.jp/watch/${request.contentId}?danime-another-comment`, {credentials: 'omit'})
-            .then(res => res.text())
-            .then(html => {
-              const matchArr = html.match(/id="js-initial-watch-data" data-api-data="([^"]+)"/);
-              if (!matchArr) {
-                throw new Error('watch')
-              }
-              return matchArr[1];
-            }).then(htjson => {
-                const patterns = {
-                    '&lt;'   : '<',
-                    '&gt;'   : '>',
-                    '&amp;'  : '&',
-                    '&quot;' : '"',
-                    '&#x27;' : '\'',
-                    '&#x60;' : '`'
-                };
-                const json = JSON.parse(htjson.replace(/&(lt|gt|amp|quot|#x27|#x60);/g, function(match) {
-                    return patterns[match];
-                }))
-                console.log(json)
-                return json
-            }).then(json => {
+      fetch(`https://www.nicovideo.jp/api/watch/v3_guest/${request.contentId}?additionals=pcWatchPage%2Cseries&prevIntegratedLoudness=0&actionTrackId=1g9hKPLpnU_1624006272&skips=&danime-another-comment`, {
+        credentials: 'omit',
+        headers: {
+          'x-client-os-type': 'android',
+          'x-frontend-id': '3',
+          'x-frontend-version': '0.1.0'
+        },      
+      })
+            .then(res => res.json())
+            .then(json => {
               sendResponse({result: json});
             }).catch(error => {
               sendResponse({error});
