@@ -65,7 +65,7 @@ function hackFetchThread(libraryFunctions) {
     });
 
     const originalFetchThread = e.exports[fetchThreadBlockPropertyName].prototype.fetchThread;
-    e.exports[fetchThreadBlockPropertyName].prototype.fetchThread = function () {
+    e.exports[fetchThreadBlockPropertyName].prototype.fetchThread = function (...args) {
       const fetchThreadArguments = new FetchThreadArguments(arguments);
 
       // 今見ている動画の so なしIDをdocument経由でとる良い方法がわからないのでsessionStorageにさすクソみたいな方法で用意する。
@@ -125,7 +125,15 @@ function hackFetchThread(libraryFunctions) {
             whenSec: fetchThreadArguments.get(0).thread.whenSec ? fetchThreadArguments.get(0).thread.whenSec : void 0
           }));
           return Promise.all([
-            originalFetchThread.call(this, ...fetchThreadArguments.raw),
+            originalFetchThread.call(this, ...fetchThreadArguments.raw)
+              .catch(error => {
+                console.log('他動画のコメントの取得に失敗したため、もとの動画のコメントだけ取得します');
+                if (error && error.length === 1 && error[0] && error[0].thread && error[0].thread.thread === '' + anotherThreadId) {
+                  // エラーが anotherThreadId のやつだけだったら、除去してもう一度
+                  return originalFetchThread.call(this, ...args);
+                }
+                return Promise.reject(error);
+              }),
             CommentOffsetStorage.get(fetchThreadArguments.defaultThreadId, anotherThreadId)
           ]);
         })
@@ -139,22 +147,24 @@ function hackFetchThread(libraryFunctions) {
 
           // anotherThread で取得した内容を元の動画の通常コメントを表す thread に詰め直す。ちょっと壊れそうだけど動いた
           let newIndex = 0;
-          threads[anotherThreadIndex]._chatMap.forEach((value, key) => {
-            while (threads[regularThreadIndex]._chatMap.has(newIndex)) {
+          if (threads[anotherThreadIndex]) {
+            threads[anotherThreadIndex]._chatMap.forEach((value, key) => {
+              while (threads[regularThreadIndex]._chatMap.has(newIndex)) {
+                ++newIndex;
+              }
+              // thread を偽装しないとコメント一覧の方に表示されなかった
+              value.thread = fetchThreadArguments.regularThreadId;
+  
+              if (offset) {
+                // vpos がコメント位置。単位はセンチ秒
+                value.vpos += offset.offset * 100;
+              }
+  
+              threads[regularThreadIndex]._chatMap.set(newIndex, value);
               ++newIndex;
-            }
-            // thread を偽装しないとコメント一覧の方に表示されなかった
-            value.thread = fetchThreadArguments.regularThreadId;
-
-            if (offset) {
-              // vpos がコメント位置。単位はセンチ秒
-              value.vpos += offset.offset * 100;
-            }
-
-            threads[regularThreadIndex]._chatMap.set(newIndex, value);
-            ++newIndex;
-          });
-          showIgnoreDialog(fetchThreadArguments.defaultThreadId, anotherTitle);
+            });
+            showIgnoreDialog(fetchThreadArguments.defaultThreadId, anotherTitle);
+          }
 
           return threads;
         }).catch(error => {
