@@ -7,9 +7,23 @@ import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
 SelectedPairsStorage.migration();
 
-inject(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
+
+const hackScript = createScript(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
+//createScript(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
 const watchAppJsURI = getWatchAppJsURI();
-inject(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
+const newAppScript = createScript(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
+//createScript(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
+
+// 動的追加したスクリプトは非同期に読み込まれるので、onload を用いて同期に読み込ませる
+//hackScript.onload = function() {
+//  document.body.appendChild(newAppScript);
+//}
+//document.body.appendChild(hackScript);
+
+newAppScript.onload = function() {
+  document.body.appendChild(hackScript);
+}
+document.body.appendChild(newAppScript);
 
 // background.js と通信するためのもの
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -105,12 +119,14 @@ window.addEventListener('message', event => {
 });
 
 // --- utils ---
-function inject(src) {
+function createScript(src) {
   const s = document.createElement('script');
   s.setAttribute('type', 'text/javascript');
   s.setAttribute('src', src);
+  return s;
 
-  document.body.appendChild(s);
+  // DEBUG
+  //document.body.appendChild(s);
 }
 
 function getWatchAppJsURI() {
