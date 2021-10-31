@@ -7,23 +7,21 @@ import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
 SelectedPairsStorage.migration();
 
-
-const hackScript = createScript(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
-//createScript(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
+const hackFetchThreadScript = createScript(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
+const hackCommentAlphaScript = createScript(chrome.extension.getURL('scripts/hack_comment_alpha.js'));
 const watchAppJsURI = getWatchAppJsURI();
 const newAppScript = createScript(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
-//createScript(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
 
-// 動的追加したスクリプトは非同期に読み込まれるので、onload を用いて同期に読み込ませる
-//hackScript.onload = function() {
-//  document.body.appendChild(newAppScript);
-//}
-//document.body.appendChild(hackScript);
-
+// 動的追加したスクリプトは非同期に読み込まれるので、onload を用いて同期に読み込ませる。
+// 以下の順にスクリプトを読み込ませないと書き換えたライブラリが参照されなかった。
+// hack_fetch_thread.js, watch_app_*?by-danime-another-comment.js, hack_comment_alpha.js
 newAppScript.onload = function() {
-  document.body.appendChild(hackScript);
+  document.body.appendChild(hackCommentAlphaScript);
 }
-document.body.appendChild(newAppScript);
+hackFetchThreadScript.onload = function() {
+  document.body.appendChild(newAppScript);
+}
+document.body.appendChild(hackFetchThreadScript);
 
 // background.js と通信するためのもの
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -124,9 +122,6 @@ function createScript(src) {
   s.setAttribute('type', 'text/javascript');
   s.setAttribute('src', src);
   return s;
-
-  // DEBUG
-  //document.body.appendChild(s);
 }
 
 function getWatchAppJsURI() {
