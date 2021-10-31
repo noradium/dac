@@ -7,21 +7,16 @@ import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
 SelectedPairsStorage.migration();
 
-const hackFetchThreadScript = createScript(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
-const hackCommentAlphaScript = createScript(chrome.extension.getURL('scripts/hack_comment_alpha.js'));
-const watchAppJsURI = getWatchAppJsURI();
-const newAppScript = createScript(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
-
 // 動的追加したスクリプトは非同期に読み込まれるので、onload を用いて同期に読み込ませる。
 // 以下の順にスクリプトを読み込ませないと書き換えたライブラリが参照されなかった。
 // hack_fetch_thread.js, watch_app_*?by-danime-another-comment.js, hack_comment_alpha.js
-newAppScript.onload = function() {
-  document.body.appendChild(hackCommentAlphaScript);
-}
-hackFetchThreadScript.onload = function() {
-  document.body.appendChild(newAppScript);
-}
-document.body.appendChild(hackFetchThreadScript);
+(async () => {
+  await inject(chrome.extension.getURL('scripts/hack_fetch_thread.js'));
+  // 他拡張機能による watchApp の遅延読み込み考慮し、inject 直前で URI を取得する
+  const watchAppJsURI = getWatchAppJsURI();
+  await inject(`${watchAppJsURI}${watchAppJsURI.indexOf('?') === -1 ? '?' : '&'}by-danime-another-comment`);
+  await inject(chrome.extension.getURL('scripts/hack_comment_alpha.js'));
+})();
 
 // background.js と通信するためのもの
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -117,11 +112,17 @@ window.addEventListener('message', event => {
 });
 
 // --- utils ---
-function createScript(src) {
-  const s = document.createElement('script');
-  s.setAttribute('type', 'text/javascript');
-  s.setAttribute('src', src);
-  return s;
+async function inject(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.setAttribute('type', 'text/javascript');
+    s.setAttribute('src', src);
+    s.onload = (() => {
+      resolve();
+    });
+
+    document.body.appendChild(s);
+  });
 }
 
 function getWatchAppJsURI() {
