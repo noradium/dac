@@ -1,16 +1,13 @@
 import VideoInfo from './modules/video_info';
 import FetchThreadArguments from "./modules/fetch_thread_arguments";
-import SearchAPI from "./modules/search_api";
 import buildSearchWord from "./modules/build_search_word";
 import IgnoreIdsStorage from "./modules/storage/ignore_ids_storage";
 import Dialog from "./modules/dialog";
 import SelectedPairsStorage from "./modules/storage/selected_pairs_storage";
-import CommentAlphaStorage from "./modules/storage/comment_alpha_storage";
 import {GlobalVars} from './modules/global_vars';
 import CommentOffsetStorage from './modules/storage/comment_offset_storage';
 
 let fetchThreadHacked = false;
-let renderCanvasHacked = false;
 
 try {
   init();
@@ -25,6 +22,7 @@ function init() {
   }
   console.info('danime-another-comment successfully initialized.');
 }
+
 let chunkwatchPush = window['webpackChunkwatch'].push;
 window['webpackChunkwatch'].push = function (item) {
   hackLibrary(item[1]);
@@ -34,9 +32,6 @@ window['webpackChunkwatch'].push = function (item) {
 function hackLibrary(libraryFunctions) {
   if (!fetchThreadHacked) {
     fetchThreadHacked = hackFetchThread(libraryFunctions);
-  }
-  if (!renderCanvasHacked) {
-    renderCanvasHacked = hackRenderCanvas(libraryFunctions);
   }
 }
 
@@ -303,46 +298,6 @@ function hackFetchThread(libraryFunctions) {
       '#ea5632'
     );
   }
-
-  return true;
-}
-
-
-function hackRenderCanvas(libraryFunctions) {
-  ///////////////////////
-  // _renderCanvas を書き換える
-
-  const renderCanvasFunctionIndex = Object.keys(libraryFunctions).find((index) => {
-    const item = libraryFunctions[index];
-    // _renderCanvas の定義とか globalAlpha の設定箇所があったらそれが、コメントをcanvasレンダリングするライブラリ
-    return (
-      item &&
-      !!item.toString().match(/\.prototype\._renderCanvas\s?=\s?function/) &&
-      !!item.toString().match(/\.context\.globalAlpha\s?=\s?this\.worldAlpha/) &&
-      !!item.toString().match(/texture\.crop\.width/)
-    );
-  });
-  if (typeof renderCanvasFunctionIndex === 'undefined') {
-    return false;
-  }
-
-  const commentAlpha = CommentAlphaStorage.get();
-  
-  const libraryFunction = libraryFunctions[renderCanvasFunctionIndex];
-  libraryFunctions[renderCanvasFunctionIndex] = function (t, e, n) {
-    libraryFunction(t, e, n);
-    const originalRenderCanvas = t.exports.prototype._renderCanvas;
-    t.exports.prototype._renderCanvas = function (t) {
-      // この時点で this.worldAlpha に指定されているアルファ値でコメントがレンダリングされる
-      // dアニメの動画を見た時、
-      // dアニメ側のコメントを表示しているチャンネルコメントは this.worldAlpha === 1
-      // 別動画のコメントを表示している通常コメントは this.worldAlpha === 0.5
-      if (this.worldAlpha === 0.5) {
-        this.worldAlpha = commentAlpha;
-      }
-      originalRenderCanvas.call(this, ...arguments);
-    };
-  };
 
   return true;
 }
