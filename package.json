@@ -22,7 +22,7 @@
     "path": "^0.12.7",
     "query-string": "^5.0.0",
     "rework-npm": "^1.0.0",
-    "webpack": "^2.7.0",
+    "webpack": "^5.75.0",
     "webpack-stream": "^4.0.0"
   },
   "dependencies": {
